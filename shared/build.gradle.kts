@@ -12,11 +12,16 @@ kotlin {
         }
     }
 
-    listOf(
+    applyDefaultHierarchyTemplate()
+
+    val appleTargets = listOf(
         iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
+        iosSimulatorArm64(),
+        tvosArm64(),
+        tvosSimulatorArm64()
+    )
+    appleTargets.forEach { appleTarget ->
+        appleTarget.binaries.framework {
             baseName = "Shared"
             isStatic = true
         }
@@ -29,6 +34,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+        val appleMain by getting
     }
 }
 

@@ -11,20 +11,20 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		45F321E88190E5A342EED99A /* Exceptions for "iosApp" folder in "iosApp" target */ = {
+		45F321E88190E5A342EED99A /* Exceptions for "iosApp" folder in "tvosApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = A36FF22272FA5C6200840E3C /* iosApp */;
+			target = A36FF22272FA5C6200840E3C /* tvosApp */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		311AD632867DAB7C3E6F7252 /* iosApp */ = {
+		311AD632867DAB7C3E6F7252 /* tvosApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				45F321E88190E5A342EED99A /* Exceptions for "iosApp" folder in "iosApp" target */,
+				45F321E88190E5A342EED99A /* Exceptions for "iosApp" folder in "tvosApp" target */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -81,12 +81,12 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				311AD632867DAB7C3E6F7252 /* iosApp */,
+				311AD632867DAB7C3E6F7252 /* tvosApp */,
 			);
-			name = iosApp;
+			name = tvosApp;
 			packageProductDependencies = (
 			);
-			productName = iosApp;
+			productName = tvosApp;
 			productReference = B74E06883F252D1284464C8C /* floatsauce.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -226,7 +226,8 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = iphoneos;
+				SDKROOT = appletvos;
+				TVOS_DEPLOYMENT_TARGET = 18.1;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -284,7 +285,8 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				SDKROOT = iphoneos;
+				SDKROOT = appletvos;
+				TVOS_DEPLOYMENT_TARGET = 18.1;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -314,7 +316,7 @@
 				);
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 3;
 			};
 			name = Debug;
 		};
@@ -334,15 +336,13 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 3;
 			};
 			name = Release;
 		};
