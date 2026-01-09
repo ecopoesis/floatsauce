@@ -2,24 +2,26 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.androidKotlinMultiplatformLibrary)
 }
 
 kotlin {
-    androidTarget {
+    androidLibrary {
+        namespace = "org.miker.floatsauce.shared"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
         }
+        minSdk = libs.versions.android.minSdk.get().toInt()
     }
 
     applyDefaultHierarchyTemplate()
 
     val appleTargets = listOf(
-        iosArm64(),
-        iosSimulatorArm64(),
         tvosArm64(),
         tvosSimulatorArm64()
     )
+
     appleTargets.forEach { appleTarget ->
         appleTarget.binaries.framework {
             baseName = "Shared"
@@ -29,23 +31,29 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            // put your Multiplatform dependencies here
+            implementation(libs.ktor.client.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+        androidMain.dependencies {
+            implementation(libs.ktor.client.okhttp)
+        }
+        appleMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+        }
         val appleMain by getting
     }
 }
-
-android {
+/*
+androidLibrary {
     namespace = "org.miker.floatsauce.shared"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
+  //  compileOptions {
+  //      sourceCompatibility = JavaVersion.VERSION_11
+  //      targetCompatibility = JavaVersion.VERSION_11
+//}
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
     }
-}
+}*/
