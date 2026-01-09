@@ -84,6 +84,7 @@ kotlin {
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.ktor.client.content.negotiation)
                 implementation(libs.ktor.serialization.kotlinx.json)
+                implementation(libs.androidx.lifecycle.viewmodel)
             }
         }
         commonTest.dependencies {

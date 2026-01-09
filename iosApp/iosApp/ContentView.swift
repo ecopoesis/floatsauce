@@ -1,28 +1,166 @@
 import Shared
 import SwiftUI
 
-struct ContentView: View {
-    @State private var showContent = false
-    var body: some View {
-        VStack {
-            Button("Click me!") {
-                withAnimation {
-                    showContent = !showContent
-                }
-            }
+class SwiftFloatsauceViewModel: ObservableObject {
+    @Published var currentScreen: Screen = Screen.ServiceSelection()
+    @Published var services: [AuthService] = []
+    @Published var subscriptions: [Creator] = []
+    @Published var videos: [Video] = []
+    @Published var authState: AuthState? = nil
+    
+    let viewModel = FloatsauceViewModel(repository: MockFloatsauceRepository())
+    
+    init() {
+        self.currentScreen = viewModel.currentScreen.value as! Screen
+        syncState()
+    }
+    
+    func selectService(service: AuthService) {
+        viewModel.selectService(service: service)
+        syncState()
+    }
+    
+    func selectCreator(creator: Creator) {
+        viewModel.selectCreator(creator: creator)
+        syncState()
+    }
+    
+    func goBack() {
+        viewModel.goBack()
+        syncState()
+    }
+    
+    private func syncState() {
+        self.currentScreen = viewModel.currentScreen.value as! Screen
+        self.services = viewModel.services.value as? [AuthService] ?? []
+        self.subscriptions = viewModel.subscriptions.value as? [Creator] ?? []
+        self.videos = viewModel.videos.value as? [Video] ?? []
+        self.authState = viewModel.authState.value as? AuthState
+    }
+}
 
-            if showContent {
-                VStack(spacing: 16) {
-                    Image(systemName: "swift")
-                        .font(.system(size: 200))
-                        .foregroundColor(.accentColor)
-                    Text("SwiftUI: \(Greeting().greet())")
-                }
-                .transition(.move(edge: .top).combined(with: .opacity))
+struct ContentView: View {
+    @StateObject private var viewModel = SwiftFloatsauceViewModel()
+    
+    var body: some View {
+        ZStack {
+            if viewModel.currentScreen is Screen.ServiceSelection {
+                ServiceSelectionView(viewModel: viewModel)
+            } else if let qrScreen = viewModel.currentScreen as? Screen.QRLogin {
+                QRLoginView(service: qrScreen.service, viewModel: viewModel)
+            } else if let subScreen = viewModel.currentScreen as? Screen.Subscriptions {
+                SubscriptionsView(service: subScreen.service, viewModel: viewModel)
+            } else if let creatorScreen = viewModel.currentScreen as? Screen.CreatorDetail {
+                CreatorDetailView(creator: creatorScreen.creator, viewModel: viewModel)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.edgesIgnoringSafeArea(.all))
+    }
+}
+
+struct ServiceSelectionView: View {
+    @ObservedObject var viewModel: SwiftFloatsauceViewModel
+    var body: some View {
+        VStack(spacing: 40) {
+            Text("Choose Service")
+                .font(.largeTitle)
+                .foregroundColor(.white)
+            HStack(spacing: 40) {
+                ForEach(viewModel.services, id: \.self) { service in
+                    Button(action: { viewModel.selectService(service: service) }) {
+                        Text(service.displayName)
+                            .frame(width: 300, height: 150)
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct QRLoginView: View {
+    let service: AuthService
+    @ObservedObject var viewModel: SwiftFloatsauceViewModel
+    var body: some View {
+        VStack(spacing: 30) {
+            Text("Login to \(service.displayName)")
+                .font(.largeTitle)
+                .foregroundColor(.white)
+            Text("Scan the QR code on your phone")
+                .foregroundColor(.gray)
+            
+            Rectangle()
+                .fill(Color.white)
+                .frame(width: 200, height: 200)
+                .overlay(
+                    Text("QR CODE\n\(viewModel.authState?.qrCodeUrl ?? "")")
+                        .foregroundColor(.black)
+                        .multilineTextAlignment(.center)
+                )
+            
+            Button("Back") { viewModel.goBack() }
+        }
+    }
+}
+
+struct SubscriptionsView: View {
+    let service: AuthService
+    @ObservedObject var viewModel: SwiftFloatsauceViewModel
+    var body: some View {
+        VStack {
+            HStack {
+                Button("Back") { viewModel.goBack() }
+                Spacer()
+                Text("\(service.displayName) Subscriptions")
+                    .font(.title)
+                    .foregroundColor(.white)
+                Spacer()
+            }
+            .padding()
+            
+            List(viewModel.subscriptions, id: \.id) { creator in
+                Button(action: { viewModel.selectCreator(creator: creator) }) {
+                    HStack {
+                        Circle()
+                            .fill(Color.gray)
+                            .frame(width: 50, height: 50)
+                        Text(creator.name)
+                            .foregroundColor(.white)
+                        Spacer()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct CreatorDetailView: View {
+    let creator: Creator
+    @ObservedObject var viewModel: SwiftFloatsauceViewModel
+    var body: some View {
+        VStack {
+            HStack {
+                Button("Back") { viewModel.goBack() }
+                Spacer()
+                Text(creator.name)
+                    .font(.title)
+                    .foregroundColor(.white)
+                Spacer()
+            }
+            .padding()
+            
+            List(viewModel.videos, id: \.id) { video in
+                Button(action: { print("Playing: \(video.videoUrl)") }) {
+                    VStack(alignment: .leading) {
+                        Text(video.title)
+                            .foregroundColor(.white)
+                        Text(video.duration)
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+        }
     }
 }
 
