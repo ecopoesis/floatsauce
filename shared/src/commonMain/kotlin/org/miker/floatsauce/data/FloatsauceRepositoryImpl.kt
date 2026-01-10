@@ -80,4 +80,19 @@ class FloatsauceRepositoryImpl(
         // Implement if needed, but the focus is on auth now.
         return emptyList()
     }
+
+    override suspend fun requestDeviceAuth(service: AuthService) {
+        println("[DEBUG_LOG] POST to Device Authorization Endpoint for ${service.displayName}")
+    }
+
+    override suspend fun pollForToken(service: AuthService): String? {
+        return when (service) {
+            AuthService.FLOATPLANE -> AuthSecrets.FLOATPLANE_COOKIE
+            AuthService.SAUCE_PLUS -> AuthSecrets.SAUCEPLUS_COOKIE
+        }
+    }
+
+    override suspend fun saveToken(service: AuthService, token: String) {
+        secureStorage.set("cookie_${service.name}", token)
+    }
 }

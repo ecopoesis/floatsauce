@@ -8,34 +8,53 @@ class SwiftFloatsauceViewModel: ObservableObject {
     @Published var videos: [Video] = []
     @Published var authState: AuthState? = nil
     
-    let viewModel = FloatsauceViewModel(repository: FloatsauceRepositoryImpl(secureStorage: AppleSecureStorage()))
+    private let viewModel: FloatsauceViewModel
     
     init() {
+        self.viewModel = FloatsauceViewModel(repository: FloatsauceRepositoryImpl(secureStorage: AppleSecureStorage()))
         self.currentScreen = viewModel.currentScreen.value as! Screen
-        syncState()
+        
+        viewModel.watchCurrentScreen { [weak self] screen in
+            DispatchQueue.main.async {
+                self?.currentScreen = screen
+            }
+        }
+        
+        viewModel.watchServices { [weak self] services in
+            DispatchQueue.main.async {
+                self?.services = services
+            }
+        }
+        
+        viewModel.watchSubscriptions { [weak self] subscriptions in
+            DispatchQueue.main.async {
+                self?.subscriptions = subscriptions
+            }
+        }
+        
+        viewModel.watchVideos { [weak self] videos in
+            DispatchQueue.main.async {
+                self?.videos = videos
+            }
+        }
+        
+        viewModel.watchAuthState { [weak self] authState in
+            DispatchQueue.main.async {
+                self?.authState = authState
+            }
+        }
     }
     
     func selectService(service: AuthService) {
         viewModel.selectService(service: service)
-        syncState()
     }
     
     func selectCreator(creator: Creator) {
         viewModel.selectCreator(creator: creator)
-        syncState()
     }
     
     func goBack() {
         viewModel.goBack()
-        syncState()
-    }
-    
-    private func syncState() {
-        self.currentScreen = viewModel.currentScreen.value as! Screen
-        self.services = viewModel.services.value as? [AuthService] ?? []
-        self.subscriptions = viewModel.subscriptions.value as? [Creator] ?? []
-        self.videos = viewModel.videos.value as? [Video] ?? []
-        self.authState = viewModel.authState.value as? AuthState
     }
 }
 
@@ -48,6 +67,8 @@ struct ContentView: View {
                 ServiceSelectionView(viewModel: viewModel)
             } else if let qrScreen = viewModel.currentScreen as? Screen.QRLogin {
                 QRLoginView(service: qrScreen.service, viewModel: viewModel)
+            } else if let failedScreen = viewModel.currentScreen as? Screen.AuthFailed {
+                AuthFailedView(service: failedScreen.service, viewModel: viewModel)
             } else if let subScreen = viewModel.currentScreen as? Screen.Subscriptions {
                 SubscriptionsView(service: subScreen.service, viewModel: viewModel)
             } else if let creatorScreen = viewModel.currentScreen as? Screen.CreatorDetail {
@@ -97,6 +118,24 @@ struct QRLoginView: View {
                         .foregroundColor(.black)
                         .multilineTextAlignment(.center)
                 )
+            
+            Button("Back") { viewModel.goBack() }
+        }
+    }
+}
+
+struct AuthFailedView: View {
+    let service: AuthService
+    @ObservedObject var viewModel: SwiftFloatsauceViewModel
+    var body: some View {
+        VStack(spacing: 30) {
+            Text("Authorization failed")
+                .font(.largeTitle)
+                .foregroundColor(.white)
+            
+            Button("Try again?") {
+                viewModel.selectService(service: service)
+            }
             
             Button("Back") { viewModel.goBack() }
         }

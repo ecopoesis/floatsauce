@@ -45,6 +45,7 @@ fun App() {
                 when (val screen = currentScreen) {
                     is Screen.ServiceSelection -> ServiceSelectionScreen(viewModel)
                     is Screen.QRLogin -> QRLoginScreen(screen.service, viewModel)
+                    is Screen.AuthFailed -> AuthFailedScreen(screen.service, viewModel)
                     is Screen.Subscriptions -> SubscriptionsScreen(screen.service, viewModel)
                     is Screen.CreatorDetail -> CreatorDetailScreen(screen.creator, viewModel)
                 }
@@ -92,6 +93,25 @@ fun QRLoginScreen(service: AuthService, viewModel: FloatsauceViewModel) {
             Text("QR CODE HERE\n${authState?.qrCodeUrl ?: ""}", color = Color.Black, modifier = Modifier.align(Alignment.Center))
         }
         Spacer(modifier = Modifier.height(32.dp))
+        Button(onClick = { viewModel.goBack() }) {
+            Text("Back")
+        }
+    }
+}
+
+@Composable
+fun AuthFailedScreen(service: AuthService, viewModel: FloatsauceViewModel) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Authorization failed", style = MaterialTheme.typography.headlineLarge)
+        Spacer(modifier = Modifier.height(32.dp))
+        Button(onClick = { viewModel.selectService(service) }) {
+            Text("Try again?")
+        }
+        Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = { viewModel.goBack() }) {
             Text("Back")
         }

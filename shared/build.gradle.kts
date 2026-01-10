@@ -1,5 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
@@ -101,3 +103,42 @@ kotlin {
     }
 }
 
+
+tasks.register("generateSecrets") {
+    val secretsFile = rootProject.file("auth_secrets.properties")
+    val outputDir = layout.buildDirectory.dir("generated/sources/secrets/commonMain/kotlin")
+    inputs.file(secretsFile).optional()
+    outputs.dir(outputDir)
+
+    doLast {
+        val properties = Properties()
+        if (secretsFile.exists()) {
+            secretsFile.inputStream().use { properties.load(it) }
+        }
+        val floatplaneCookie = properties.getProperty("floatplane_cookie", "")
+        val sauceplusCookie = properties.getProperty("sauceplus_cookie", "")
+
+        val outputFile = outputDir.get().file("org/miker/floatsauce/data/AuthSecrets.kt").asFile
+        outputFile.parentFile.mkdirs()
+        outputFile.writeText("""
+            package org.miker.floatsauce.data
+
+            object AuthSecrets {
+                const val FLOATPLANE_COOKIE = "$floatplaneCookie"
+                const val SAUCEPLUS_COOKIE = "$sauceplusCookie"
+            }
+        """.trimIndent())
+    }
+}
+
+kotlin {
+    sourceSets {
+        commonMain {
+            kotlin.srcDir(layout.buildDirectory.dir("generated/sources/secrets/commonMain/kotlin"))
+        }
+    }
+}
+
+tasks.matching { it.name.startsWith("compile") }.configureEach {
+    dependsOn("generateSecrets")
+}

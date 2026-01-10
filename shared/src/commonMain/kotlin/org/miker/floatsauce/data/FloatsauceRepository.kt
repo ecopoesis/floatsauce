@@ -10,6 +10,9 @@ interface FloatsauceRepository {
     suspend fun getAuthState(service: AuthService): AuthState
     suspend fun getSubscriptions(service: AuthService): List<Creator>
     suspend fun getVideos(creatorId: String): List<Video>
+    suspend fun requestDeviceAuth(service: AuthService)
+    suspend fun pollForToken(service: AuthService): String?
+    suspend fun saveToken(service: AuthService, token: String)
 }
 
 class MockFloatsauceRepository : FloatsauceRepository {
@@ -39,5 +42,17 @@ class MockFloatsauceRepository : FloatsauceRepository {
             Video("v1", "Mock Video 1 for $creatorId", null, "10:00", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"),
             Video("v2", "Mock Video 2 for $creatorId", null, "15:30", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")
         )
+    }
+
+    override suspend fun requestDeviceAuth(service: AuthService) {
+        // Stub
+    }
+
+    override suspend fun pollForToken(service: AuthService): String? {
+        return null
+    }
+
+    override suspend fun saveToken(service: AuthService, token: String) {
+        // Stub
     }
 }
