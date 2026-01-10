@@ -8,7 +8,7 @@ class SwiftFloatsauceViewModel: ObservableObject {
     @Published var videos: [Video] = []
     @Published var authState: AuthState? = nil
     
-    let viewModel = FloatsauceViewModel(repository: MockFloatsauceRepository())
+    let viewModel = FloatsauceViewModel(repository: FloatsauceRepositoryImpl(secureStorage: AppleSecureStorage()))
     
     init() {
         self.currentScreen = viewModel.currentScreen.value as! Screen

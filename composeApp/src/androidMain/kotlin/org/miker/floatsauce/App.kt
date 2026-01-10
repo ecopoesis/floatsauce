@@ -9,14 +9,29 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import org.miker.floatsauce.data.AndroidSecureStorage
+import org.miker.floatsauce.data.FloatsauceRepositoryImpl
 import org.miker.floatsauce.domain.models.*
 import org.miker.floatsauce.presentation.FloatsauceViewModel
 import org.miker.floatsauce.presentation.Screen
 
 @Composable
-fun App(viewModel: FloatsauceViewModel = FloatsauceViewModel()) {
+fun App() {
+    val context = LocalContext.current
+    val viewModel: FloatsauceViewModel = viewModel<FloatsauceViewModel>(
+        factory = viewModelFactory {
+            initializer {
+                val secureStorage = AndroidSecureStorage(context)
+                val repository = FloatsauceRepositoryImpl(secureStorage)
+                FloatsauceViewModel(repository)
+            }
+        }
+    )
     val currentScreen by viewModel.currentScreen.collectAsState()
 
     MaterialTheme(

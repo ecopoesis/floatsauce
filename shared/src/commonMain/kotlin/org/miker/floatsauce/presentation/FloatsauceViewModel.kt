@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import org.miker.floatsauce.data.FloatsauceRepository
-import org.miker.floatsauce.data.MockFloatsauceRepository
 import org.miker.floatsauce.domain.models.*
 
 sealed class Screen {
@@ -17,7 +17,7 @@ sealed class Screen {
 }
 
 class FloatsauceViewModel(
-    private val repository: FloatsauceRepository = MockFloatsauceRepository()
+    private val repository: FloatsauceRepository
 ) : ViewModel() {
 
     private val _currentScreen = MutableStateFlow<Screen>(Screen.ServiceSelection)
@@ -36,19 +36,23 @@ class FloatsauceViewModel(
     val authState: StateFlow<AuthState?> = _authState.asStateFlow()
 
     fun selectService(service: AuthService) {
-        val auth = repository.getAuthState(service)
-        _authState.value = auth
-        if (auth.isLoggedIn) {
-            _subscriptions.value = repository.getSubscriptions(service)
-            _currentScreen.value = Screen.Subscriptions(service)
-        } else {
-            _currentScreen.value = Screen.QRLogin(service)
+        viewModelScope.launch {
+            val auth = repository.getAuthState(service)
+            _authState.value = auth
+            if (auth.isLoggedIn) {
+                _subscriptions.value = repository.getSubscriptions(service)
+                _currentScreen.value = Screen.Subscriptions(service)
+            } else {
+                _currentScreen.value = Screen.QRLogin(service)
+            }
         }
     }
 
     fun selectCreator(creator: Creator) {
-        _videos.value = repository.getVideos(creator.id)
-        _currentScreen.value = Screen.CreatorDetail(creator)
+        viewModelScope.launch {
+            _videos.value = repository.getVideos(creator.id)
+            _currentScreen.value = Screen.CreatorDetail(creator)
+        }
     }
 
     fun goBack() {

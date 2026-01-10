@@ -84,7 +84,7 @@ kotlin {
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.ktor.client.content.negotiation)
                 implementation(libs.ktor.serialization.kotlinx.json)
-                implementation(libs.androidx.lifecycle.viewmodel)
+                api(libs.androidx.lifecycle.viewmodel)
             }
         }
         commonTest.dependencies {
@@ -92,6 +92,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.androidx.security.crypto)
         }
         appleMain.dependencies {
             implementation(libs.ktor.client.darwin)
