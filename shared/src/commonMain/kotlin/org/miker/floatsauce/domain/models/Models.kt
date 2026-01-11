@@ -1,8 +1,8 @@
 package org.miker.floatsauce.domain.models
 
-enum class AuthService(val displayName: String) {
-    FLOATPLANE("Floatplane"),
-    SAUCE_PLUS("Sauce+")
+enum class AuthService(val displayName: String, val origin: String) {
+    FLOATPLANE("Floatplane", "https://www.floatplane.com"),
+    SAUCE_PLUS("Sauce+", "https://www.sauceplus.com")
 }
 
 data class AuthState(

@@ -1,11 +1,17 @@
 package org.miker.floatsauce.data
 
+import io.ktor.client.HttpClientConfig
+import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.*
+import io.ktor.client.request.header
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.miker.floatsauce.api.*
 import org.miker.floatsauce.domain.models.*
+import org.miker.floatsauce.getPlatform
 import org.openapitools.client.auth.ApiKeyAuth
 import org.openapitools.client.infrastructure.ApiClient
 import org.openapitools.client.infrastructure.HttpResponse
@@ -14,16 +20,38 @@ class FloatsauceRepositoryImpl(
     private val secureStorage: SecureStorage
 ) : FloatsauceRepository {
 
-    private fun <T : ApiClient> createApi(service: AuthService, apiFactory: (String) -> T): T {
-        val baseUrl = when (service) {
-            AuthService.FLOATPLANE -> "https://www.floatplane.com"
-            AuthService.SAUCE_PLUS -> "https://www.sauceplus.com"
-        }
+    private fun <T : ApiClient> createApi(service: AuthService, apiFactory: (String, ((HttpClientConfig<*>) -> Unit)?) -> T): T {
+        val baseUrl = service.origin
         val cookieName = when (service) {
             AuthService.FLOATPLANE -> "sails.sid"
             AuthService.SAUCE_PLUS -> "__Host-sp-sess"
         }
-        val api = apiFactory(baseUrl)
+
+        val platform = getPlatform()
+        val httpClientConfig: (HttpClientConfig<*>) -> Unit = { config ->
+            config.install(Logging) {
+                logger = object : Logger {
+                    override fun log(message: String) {
+                        println("[DEBUG_LOG] Ktor: $message")
+                    }
+                }
+                level = LogLevel.ALL
+                sanitizeHeader { header -> header == HttpHeaders.Authorization || header == "Cookie" || header == "Set-Cookie" }
+            }
+            config.install(DefaultRequest) {
+                val userAgent = platform.userAgent
+                println("[DEBUG_LOG] Setting User-Agent: $userAgent")
+                header(HttpHeaders.UserAgent, userAgent)
+                println("[DEBUG_LOG] Setting Origin: $baseUrl")
+                header("Origin", baseUrl)
+                val cookie = secureStorage.get("cookie_${service.name}")
+                if (cookie != null) {
+                    println("[DEBUG_LOG] Setting Cookie: $cookieName=$cookie")
+                }
+            }
+        }
+
+        val api = apiFactory(baseUrl, httpClientConfig)
         val auth = api.getAuthentication("CookieAuth") as? ApiKeyAuth
         auth?.let {
             it.paramName = cookieName
@@ -32,10 +60,10 @@ class FloatsauceRepositoryImpl(
         return api
     }
 
-    private fun createSubscriptionsApi(service: AuthService) = createApi(service) { SubscriptionsV3Api(baseUrl = it) }
-    private fun createCreatorApi(service: AuthService) = createApi(service) { CreatorV3Api(baseUrl = it) }
-    private fun createContentApi(service: AuthService) = createApi(service) { ContentV3Api(baseUrl = it) }
-    private fun createDeliveryApi(service: AuthService) = createApi(service) { DeliveryV3Api(baseUrl = it) }
+    private fun createSubscriptionsApi(service: AuthService) = createApi(service) { baseUrl, config -> SubscriptionsV3Api(baseUrl = baseUrl, httpClientConfig = config) }
+    private fun createCreatorApi(service: AuthService) = createApi(service) { baseUrl, config -> CreatorV3Api(baseUrl = baseUrl, httpClientConfig = config) }
+    private fun createContentApi(service: AuthService) = createApi(service) { baseUrl, config -> ContentV3Api(baseUrl = baseUrl, httpClientConfig = config) }
+    private fun createDeliveryApi(service: AuthService) = createApi(service) { baseUrl, config -> DeliveryV3Api(baseUrl = baseUrl, httpClientConfig = config) }
 
     override fun getServices(): List<AuthService> = AuthService.entries
 
@@ -123,6 +151,37 @@ class FloatsauceRepositoryImpl(
         }
     }
 
+    override suspend fun getVideoStreamUrl(service: AuthService, videoId: String): String? {
+        val contentApi = createContentApi(service)
+        val deliveryApi = createDeliveryApi(service)
+        return try {
+            // As requested, get video content first
+            contentApi.getVideoContent(videoId)
+            
+            val response = deliveryApi.getDeliveryInfoV3(
+                scenario = DeliveryV3Api.ScenarioGetDeliveryInfoV3.ON_DEMAND,
+                entityId = videoId
+            )
+            val cdnResponse = response.body()
+            val group = cdnResponse.groups.firstOrNull() ?: return null
+            val variant = group.variants.firstOrNull() ?: return null
+            
+            val baseUrl = variant.origins?.firstOrNull()?.url 
+                ?: group.origins?.firstOrNull()?.url 
+                ?: service.origin
+            
+            val url = if (variant.url.startsWith("http")) {
+                variant.url
+            } else {
+                "${baseUrl.removeSuffix("/")}/${variant.url.removePrefix("/")}"
+            }
+            println("[DEBUG_LOG] Resolved Video URL: $url")
+            url
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     private fun formatDuration(seconds: Double): String {
         val s = seconds.toInt()
         val h = s / 3600
@@ -148,5 +207,14 @@ class FloatsauceRepositoryImpl(
 
     override suspend fun saveToken(service: AuthService, token: String) {
         secureStorage.set("cookie_${service.name}", token)
+    }
+
+    override suspend fun getCookie(service: AuthService): Pair<String, String>? {
+        val cookieName = when (service) {
+            AuthService.FLOATPLANE -> "sails.sid"
+            AuthService.SAUCE_PLUS -> "__Host-sp-sess"
+        }
+        val cookieValue = secureStorage.get("cookie_${service.name}") ?: return null
+        return cookieName to cookieValue
     }
 }

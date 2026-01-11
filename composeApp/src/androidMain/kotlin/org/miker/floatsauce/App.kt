@@ -24,14 +24,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.media3.common.MediaItem
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
 import floatsauce.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.painterResource
 import org.miker.floatsauce.data.AndroidSecureStorage
 import org.miker.floatsauce.data.FloatsauceRepositoryImpl
+import org.miker.floatsauce.getPlatform
 import org.miker.floatsauce.domain.models.*
 import org.miker.floatsauce.presentation.FloatsauceViewModel
 import org.miker.floatsauce.presentation.Screen
@@ -65,6 +72,7 @@ fun App() {
                     is Screen.AuthFailed -> AuthFailedScreen(screen.service, viewModel)
                     is Screen.Subscriptions -> SubscriptionsScreen(screen.service, viewModel)
                     is Screen.CreatorDetail -> CreatorDetailScreen(screen.creator, viewModel)
+                    is Screen.VideoPlayback -> VideoPlaybackScreen(screen.video, screen.url, screen.cookieName, screen.cookieValue, screen.origin, viewModel)
                 }
             }
         }
@@ -269,12 +277,56 @@ fun CreatorDetailScreen(creator: Creator, viewModel: FloatsauceViewModel) {
                     supportingContent = { Text(video.duration) },
                     modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
                     trailingContent = {
-                        Button(onClick = { /* Play Video */ println("Playing: ${video.videoUrl}") }) {
+                        Button(onClick = { viewModel.playVideo(video, creator) }) {
                             Text("Play")
                         }
                     }
                 )
             }
         }
+    }
+}
+
+@Composable
+fun VideoPlaybackScreen(video: Video, url: String, cookieName: String, cookieValue: String, origin: String, viewModel: FloatsauceViewModel) {
+    println("[DEBUG_LOG] Android VideoPlaybackScreen: playing $url with cookie $cookieName and origin $origin")
+    val context = LocalContext.current
+    val exoPlayer = remember {
+        val dataSourceFactory = DefaultHttpDataSource.Factory()
+            .setUserAgent(getPlatform().userAgent)
+            .setDefaultRequestProperties(mapOf(
+                "Cookie" to "$cookieName=$cookieValue",
+                "Origin" to origin
+            ))
+
+        ExoPlayer.Builder(context)
+            .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
+            .build().apply {
+                setMediaItem(MediaItem.fromUri(url))
+                prepare()
+                playWhenReady = true
+            }
+    }
+
+    BackHandler {
+        viewModel.goBack()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            exoPlayer.release()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        AndroidView(
+            factory = {
+                PlayerView(it).apply {
+                    player = exoPlayer
+                    useController = true
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }

@@ -11,9 +11,11 @@ interface FloatsauceRepository {
     suspend fun getSubscriptions(service: AuthService): List<Creator>
     suspend fun getCreatorDetails(service: AuthService, id: String): Creator?
     suspend fun getVideos(service: AuthService, creatorId: String): List<Video>
+    suspend fun getVideoStreamUrl(service: AuthService, videoId: String): String?
     suspend fun requestDeviceAuth(service: AuthService)
     suspend fun pollForToken(service: AuthService): String?
     suspend fun saveToken(service: AuthService, token: String)
+    suspend fun getCookie(service: AuthService): Pair<String, String>?
 }
 
 class MockFloatsauceRepository : FloatsauceRepository {
@@ -49,6 +51,10 @@ class MockFloatsauceRepository : FloatsauceRepository {
         )
     }
 
+    override suspend fun getVideoStreamUrl(service: AuthService, videoId: String): String? {
+        return "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+    }
+
     override suspend fun requestDeviceAuth(service: AuthService) {
         // Stub
     }
@@ -59,5 +65,9 @@ class MockFloatsauceRepository : FloatsauceRepository {
 
     override suspend fun saveToken(service: AuthService, token: String) {
         // Stub
+    }
+
+    override suspend fun getCookie(service: AuthService): Pair<String, String>? {
+        return "sails.sid" to "mock-cookie"
     }
 }

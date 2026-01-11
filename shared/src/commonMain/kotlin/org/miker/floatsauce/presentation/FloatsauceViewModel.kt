@@ -18,6 +18,7 @@ sealed class Screen {
     data class AuthFailed(val service: AuthService) : Screen()
     data class Subscriptions(val service: AuthService) : Screen()
     data class CreatorDetail(val creator: Creator) : Screen()
+    data class VideoPlayback(val video: Video, val url: String, val cookieName: String, val cookieValue: String, val origin: String) : Screen()
 }
 
 class FloatsauceViewModel(
@@ -102,6 +103,26 @@ class FloatsauceViewModel(
         viewModelScope.launch {
             _videos.value = repository.getVideos(creator.service, creator.id)
             navigateTo(Screen.CreatorDetail(creator))
+        }
+    }
+
+    fun playVideo(video: Video, creator: Creator) {
+        viewModelScope.launch {
+            println("[DEBUG_LOG] playVideo: fetching stream URL for videoId=${video.id}")
+            val url = repository.getVideoStreamUrl(creator.service, video.id)
+            if (url != null) {
+                val cookie = repository.getCookie(creator.service)
+                println("[DEBUG_LOG] playVideo: navigating to VideoPlayback with url=$url, cookieName=${cookie?.first}, origin=${creator.service.origin}")
+                navigateTo(Screen.VideoPlayback(
+                    video = video,
+                    url = url,
+                    cookieName = cookie?.first ?: "",
+                    cookieValue = cookie?.second ?: "",
+                    origin = creator.service.origin
+                ))
+            } else {
+                println("[DEBUG_LOG] playVideo: failed to get stream URL")
+            }
         }
     }
 
