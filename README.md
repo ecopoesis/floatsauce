@@ -1,4 +1,35 @@
-This is a Kotlin Multiplatform project targeting Android, iOS.
+# FloatSauce
+
+This is a Kotlin Multiplatform project targeting AndroidTV and tvOS for view Floatplane and Sauce+ videos.
+
+### Features
+| Global features                  | tvOS | Android |
+|:---------------------------------|:----:|:-------:|
+| Single Service Mode              |  ❌   |    ❌    |
+| Config Menu on Service Selection |  ❌   |    ❌    |
+| Config Menu on Subscription      |  ❌   |    ❌    |
+| Config Menu on Creator           |  ❌   |    ❌    |
+| Preferred Resolution             |  ❌   |    ❌    |
+
+
+| Per service features          | Floatplane tvOS | Sauce+ tvOS | Floatplane Android | Sauce+ Android |
+|:------------------------------|:---------------:|:-----------:|:------------------:|:--------------:|
+| QR Code Authentication        |        ❌        |      ❌      |         ❌          |       ❌        |
+| Service Buttons               |        ❌        |      ❌      |         ❌          |       ❌        |
+| Subscriptions Grid            |        ✅        |      ✅      |         ❌          |       ❌        |
+| Service Banners               |        ✅        |      ✅      |         ✅          |       ✅        |
+| Creator Detail Views          |        ❌        |      ❌      |         ❌          |       ❌        |
+| HLS Video Playback            |        ✅        |      ✅      |         ✅          |       ✅        |
+| Watch Key Handling            |        ✅        |      ✅      |         ✅          |       ✅        |
+| Live Streaming                |        ❌        |      ❌      |         ❌          |       ❌        |
+| Video Search                  |        ❌        |      ❌      |         ❌          |       ❌        |
+| Post Counts                   |        ❌        |      ❌      |         ❌          |       ❌        |  
+| Video Comments                |        ❌        |      ❌      |         ❌          |       ❌        |  
+| Default to Correct Resolution |        ❌        |      ❌      |         ❌          |       ❌        |  
+| Channels UI on Creator Screen |        ❌        |      ❌      |         ❌          |       ❌        | 
+| Logout                        |        ❌        |      ❌      |         ❌          |       ❌        | 
+
+### Structure
 
 * [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
   It contains several subfolders:
