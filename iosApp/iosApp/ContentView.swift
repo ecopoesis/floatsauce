@@ -177,7 +177,6 @@ struct SubscriptionsView: View {
         GridItem(.flexible()),
         GridItem(.flexible()),
         GridItem(.flexible()),
-        GridItem(.flexible()),
         GridItem(.flexible())
     ]
     
@@ -203,14 +202,14 @@ struct SubscriptionsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    LazyVGrid(columns: columns, spacing: 16) {
+                    LazyVGrid(columns: columns, spacing: 60) {
                         ForEach(viewModel.subscriptions, id: \.id) { creator in
                             CreatorCard(creator: creator, viewModel: viewModel) {
                                 viewModel.selectCreator(creator: creator)
                             }
                         }
                     }
-                    .padding(16)
+                    .padding(60)
                 }
             }
         }
@@ -221,47 +220,31 @@ struct CreatorCard: View {
     let creator: Creator
     @ObservedObject var viewModel: SwiftFloatsauceViewModel
     let onClick: () -> Void
+    @FocusState private var isFocused: Bool
     
     var body: some View {
         Button(action: onClick) {
-            HStack(spacing: 12) {
-                if let iconUrl = creator.iconUrl, let url = URL(string: iconUrl) {
-                    AsyncImage(url: url) { image in
-                        image.resizable()
-                    } placeholder: {
-                        Color.gray
-                    }
-                    .frame(width: 80, height: 80)
-                    .clipShape(Circle())
-                } else {
-                    Circle()
-                        .fill(Color.gray)
-                        .frame(width: 80, height: 80)
+            if let iconUrl = creator.iconUrl, let url = URL(string: iconUrl) {
+                AsyncImage(url: url) { image in
+                    image.resizable()
+                } placeholder: {
+                    Circle().fill(Color.gray)
                 }
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(creator.name)
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                    
-                    if let channels = creator.channels, channels.intValue > 1 {
-                        Text("\(channels.intValue) Channels")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    }
-                }
-                Spacer()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 400, height: 400)
+                .clipShape(Circle())
+                .hoverEffect(.highlight)
+            } else {
+                Circle()
+                    .fill(Color.gray)
+                    .frame(width: 400, height: 400)
             }
-            .padding(12)
-            .background(Color(white: 30.0/255.0)) // 0xFF1E1E1E
-            .cornerRadius(8)
+            Text(creator.name)
         }
-        .buttonStyle(PlainButtonStyle())
         .onAppear {
             viewModel.fetchCreatorDetails(creator: creator)
         }
+        .buttonStyle(.borderless)
     }
 }
 
