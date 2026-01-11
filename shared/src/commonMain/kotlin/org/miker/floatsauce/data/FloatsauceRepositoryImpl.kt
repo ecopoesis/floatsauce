@@ -9,6 +9,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
 import org.miker.floatsauce.api.*
@@ -111,6 +113,7 @@ class FloatsauceRepositoryImpl(
                     id = sub.creator,
                     name = sub.plan.title,
                     iconUrl = sub.plan.logo,
+                    bannerUrl = null,
                     channels = null,
                     service = service
                 )
@@ -129,6 +132,7 @@ class FloatsauceRepositoryImpl(
                 id = creatorModel.id,
                 name = creatorModel.title,
                 iconUrl = creatorModel.icon.path,
+                bannerUrl = creatorModel.cover?.path,
                 channels = creatorModel.channels.size,
                 service = service
             )
@@ -149,6 +153,7 @@ class FloatsauceRepositoryImpl(
                     title = post.title,
                     thumbnailUrl = post.thumbnail?.path,
                     duration = formatDuration(post.metadata.videoDuration),
+                    releaseDate = formatFriendlyDate(post.releaseDate),
                     videoUrl = videoId
                 )
             }
@@ -200,6 +205,23 @@ class FloatsauceRepositoryImpl(
             Logger.e(e) { "Error getting video stream URL" }
             null
         }
+    }
+
+    private fun formatFriendlyDate(instant: Instant): String {
+        val now = Clock.System.now()
+        val period = now - instant
+        val seconds = period.inWholeSeconds
+        if (seconds < 60) return "Just now"
+        val minutes = seconds / 60
+        if (minutes < 60) return "$minutes minute${if (minutes > 1) "s" else ""} ago"
+        val hours = minutes / 60
+        if (hours < 24) return "$hours hour${if (hours > 1) "s" else ""} ago"
+        val days = hours / 24
+        if (days < 30) return "$days day${if (days > 1) "s" else ""} ago"
+        val months = days / 30
+        if (months < 12) return "$months month${if (months > 1) "s" else ""} ago"
+        val years = months / 12
+        return "$years year${if (years > 1) "s" else ""} ago"
     }
 
     private fun formatDuration(seconds: Double): String {

@@ -32,8 +32,8 @@ class MockFloatsauceRepository : FloatsauceRepository {
     override suspend fun getSubscriptions(service: AuthService): List<Creator> {
         return if (service == AuthService.FLOATPLANE) {
             listOf(
-                Creator("linustech", "Linus Tech Tips", "https://cdn.floatplane.com/avatars/ltt.png", 5, service),
-                Creator("louisrossmann", "Louis Rossmann", "https://cdn.floatplane.com/avatars/rossmann.png", 1, service)
+                Creator("linustech", "Linus Tech Tips", "https://cdn.floatplane.com/avatars/ltt.png", null, 5, service),
+                Creator("louisrossmann", "Louis Rossmann", "https://cdn.floatplane.com/avatars/rossmann.png", null, 1, service)
             )
         } else {
             emptyList()
@@ -46,8 +46,8 @@ class MockFloatsauceRepository : FloatsauceRepository {
 
     override suspend fun getVideos(service: AuthService, creatorId: String): List<Video> {
         return listOf(
-            Video("v1", "Mock Video 1 for $creatorId", null, "10:00", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"),
-            Video("v2", "Mock Video 2 for $creatorId", null, "15:30", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")
+            Video("v1", "Mock Video 1 for $creatorId", null, "10:00", "2 days ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"),
+            Video("v2", "Mock Video 2 for $creatorId", null, "15:30", "1 year ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")
         )
     }
 

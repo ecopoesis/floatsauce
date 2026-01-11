@@ -22,6 +22,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -38,6 +39,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import android.net.Uri
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import coil3.compose.AsyncImage
 import co.touchlab.kermit.Logger
 import floatsauce.composeapp.generated.resources.*
@@ -266,29 +268,100 @@ fun CreatorCard(creator: Creator, viewModel: FloatsauceViewModel, onClick: () ->
 @Composable
 fun CreatorDetailScreen(creator: Creator, viewModel: FloatsauceViewModel) {
     val videos by viewModel.videos.collectAsState()
+    val subscriptions by viewModel.subscriptions.collectAsState()
+    val currentCreator = subscriptions.find { it.id == creator.id } ?: creator
+
     BackHandler {
         viewModel.goBack()
     }
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(16.dp)) {
-            Button(onClick = { viewModel.goBack() }) { Text("Back") }
-            Spacer(modifier = Modifier.width(16.dp))
-            Text(creator.name, style = MaterialTheme.typography.headlineMedium)
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 32.dp)
+    ) {
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            // Banner
+            AsyncImage(
+                model = currentCreator.bannerUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(3840f / 720f)
+                    .background(Color.DarkGray),
+                contentScale = ContentScale.Crop
+            )
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        LazyColumn {
-            items(videos) { video ->
-                ListItem(
-                    headlineContent = { Text(video.title) },
-                    supportingContent = { Text(video.duration) },
-                    modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
-                    trailingContent = {
-                        Button(onClick = { viewModel.playVideo(video, creator) }) {
-                            Text("Play")
-                        }
-                    }
+
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Text(
+                text = currentCreator.name,
+                style = MaterialTheme.typography.headlineLarge,
+                modifier = Modifier.padding(horizontal = 32.dp, vertical = 24.dp),
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        items(videos) { video ->
+            VideoCard(video, creator, viewModel)
+        }
+    }
+}
+
+@Composable
+fun VideoCard(video: Video, creator: Creator, viewModel: FloatsauceViewModel) {
+    Surface(
+        modifier = Modifier
+            .padding(16.dp)
+            .clickable { viewModel.playVideo(video, creator) },
+        shape = RoundedCornerShape(12.dp),
+        color = Color(0xFF1E1E1E)
+    ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+            Box {
+                AsyncImage(
+                    model = video.thumbnailUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.DarkGray),
+                    contentScale = ContentScale.Crop
                 )
+                // Duration overlay (Liquid Glass simulated with alpha)
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(8.dp),
+                    color = Color.Black.copy(alpha = 0.7f),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = video.duration,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = video.title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = video.releaseDate,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
         }
     }
 }

@@ -18,7 +18,7 @@ This is a Kotlin Multiplatform project targeting AndroidTV and tvOS for view Flo
 | Service Buttons               |        ❌        |      ❌      |         ❌          |       ❌        |
 | Subscriptions Grid            |        ✅        |      ✅      |         ❌          |       ❌        |
 | Service Banners               |        ✅        |      ✅      |         ✅          |       ✅        |
-| Creator Detail Views          |        ❌        |      ❌      |         ❌          |       ❌        |
+| Creator Detail Views          |        ✅        |      ✅      |         ✅          |       ✅        |
 | HLS Video Playback            |        ✅        |      ✅      |         ✅          |       ✅        |
 | Watch Key Handling            |        ✅        |      ✅      |         ✅          |       ✅        |
 | Live Streaming                |        ❌        |      ❌      |         ❌          |       ❌        |
