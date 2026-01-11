@@ -29,15 +29,15 @@ struct SubscriptionsView: View {
     ]
     
     var body: some View {
-        VStack(spacing: 0) {
-            if !bannerName.isEmpty {
-                Image(bannerName)
-                    .resizable()
-                    .aspectRatio(3840/720, contentMode: .fit)
-                    .frame(maxWidth: .infinity)
-            }
-            
-            if viewModel.subscriptions.isEmpty {
+        if viewModel.subscriptions.isEmpty {
+            VStack(spacing: 0) {
+                if !bannerName.isEmpty {
+                    Image(bannerName)
+                        .resizable()
+                        .aspectRatio(3840/720, contentMode: .fit)
+                        .frame(maxWidth: .infinity)
+                }
+                
                 VStack(spacing: 20) {
                     Spacer()
                     Text("No subscriptions found. Please add subscriptions at \(siteName)")
@@ -48,8 +48,17 @@ struct SubscriptionsView: View {
                     Spacer()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
+            }
+        } else {
+            ScrollView {
+                VStack(spacing: 0) {
+                    if !bannerName.isEmpty {
+                        Image(bannerName)
+                            .resizable()
+                            .aspectRatio(3840/720, contentMode: .fit)
+                            .frame(maxWidth: .infinity)
+                    }
+                    
                     LazyVGrid(columns: columns, spacing: 60) {
                         ForEach(viewModel.subscriptions, id: \.id) { creator in
                             CreatorCard(creator: creator, viewModel: viewModel) {
