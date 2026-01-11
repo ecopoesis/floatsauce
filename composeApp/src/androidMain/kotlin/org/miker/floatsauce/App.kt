@@ -31,10 +31,13 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
+import android.net.Uri
 import coil3.compose.AsyncImage
 import co.touchlab.kermit.Logger
 import floatsauce.composeapp.generated.resources.*
@@ -295,28 +298,42 @@ fun CreatorDetailScreen(creator: Creator, viewModel: FloatsauceViewModel) {
 fun VideoPlaybackScreen(video: Video, url: String, cookieName: String, cookieValue: String, origin: String, viewModel: FloatsauceViewModel) {
     Logger.d { "Android VideoPlaybackScreen: playing $url with cookie $cookieName and origin $origin" }
     val context = LocalContext.current
-    val exoPlayer = remember {
-        val dataSourceFactory = DefaultHttpDataSource.Factory()
-            .setUserAgent(getPlatform().userAgent)
-            .setDefaultRequestProperties(mapOf(
-                "Cookie" to "$cookieName=$cookieValue",
-                "Origin" to origin
-            ))
+    val exoPlayer = remember(url, cookieValue, origin) {
+        val dataSourceFactory = DataSource.Factory {
+            val upstream = DefaultHttpDataSource.Factory()
+                .setUserAgent(getPlatform().userAgent)
+                .createDataSource()
+            FloatsauceDataSource(
+                upstream = upstream,
+                cookieName = cookieName,
+                cookieValue = cookieValue,
+                origin = origin,
+                userAgent = getPlatform().userAgent
+            )
+        }
 
         ExoPlayer.Builder(context)
             .setMediaSourceFactory(DefaultMediaSourceFactory(dataSourceFactory))
-            .build().apply {
-                setMediaItem(MediaItem.fromUri(url))
-                prepare()
-                playWhenReady = true
-            }
+            .build()
+    }
+
+    LaunchedEffect(exoPlayer) {
+        val customUrl = Uri.parse(url).buildUpon().scheme("floatsauce").build()
+        exoPlayer.setMediaItem(
+            MediaItem.Builder()
+                .setUri(customUrl)
+                .setMimeType(MimeTypes.APPLICATION_M3U8)
+                .build()
+        )
+        exoPlayer.prepare()
+        exoPlayer.play()
     }
 
     BackHandler {
         viewModel.goBack()
     }
 
-    DisposableEffect(Unit) {
+    DisposableEffect(exoPlayer) {
         onDispose {
             exoPlayer.release()
         }

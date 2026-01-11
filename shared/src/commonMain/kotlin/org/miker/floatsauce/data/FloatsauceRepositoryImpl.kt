@@ -170,7 +170,20 @@ class FloatsauceRepositoryImpl(
             )
             val cdnResponse = response.body()
             val group = cdnResponse.groups.firstOrNull() ?: return null
-            val variant = group.variants.firstOrNull() ?: return null
+
+            val platform = getPlatform()
+            val targetHeight = platform.screenHeight
+            Logger.d { "Device screen height: $targetHeight" }
+
+            val variants = group.variants
+            val variant = variants
+                .filter { (it.meta?.video?.height ?: 0) >= targetHeight }
+                .minByOrNull { it.meta?.video?.height ?: 0 }
+                ?: variants.maxByOrNull { it.meta?.video?.height ?: 0 }
+                ?: variants.firstOrNull()
+                ?: return null
+
+            Logger.d { "Selected variant: ${variant.name} (${variant.meta?.video?.width}x${variant.meta?.video?.height})" }
             
             val baseUrl = variant.origins?.firstOrNull()?.url 
                 ?: group.origins?.firstOrNull()?.url 
@@ -184,6 +197,7 @@ class FloatsauceRepositoryImpl(
             Logger.d { "Resolved Video URL: $url" }
             url
         } catch (e: Exception) {
+            Logger.e(e) { "Error getting video stream URL" }
             null
         }
     }
