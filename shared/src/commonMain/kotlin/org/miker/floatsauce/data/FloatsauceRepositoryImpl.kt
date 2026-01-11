@@ -4,8 +4,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import org.miker.floatsauce.api.CreatorV3Api
-import org.miker.floatsauce.api.SubscriptionsV3Api
+import org.miker.floatsauce.api.*
 import org.miker.floatsauce.domain.models.*
 import org.openapitools.client.auth.ApiKeyAuth
 import org.openapitools.client.infrastructure.ApiClient
@@ -15,7 +14,7 @@ class FloatsauceRepositoryImpl(
     private val secureStorage: SecureStorage
 ) : FloatsauceRepository {
 
-    private fun createSubscriptionsApi(service: AuthService): SubscriptionsV3Api {
+    private fun <T : ApiClient> createApi(service: AuthService, apiFactory: (String) -> T): T {
         val baseUrl = when (service) {
             AuthService.FLOATPLANE -> "https://www.floatplane.com"
             AuthService.SAUCE_PLUS -> "https://www.sauceplus.com"
@@ -24,7 +23,7 @@ class FloatsauceRepositoryImpl(
             AuthService.FLOATPLANE -> "sails.sid"
             AuthService.SAUCE_PLUS -> "__Host-sp-sess"
         }
-        val api = SubscriptionsV3Api(baseUrl = baseUrl)
+        val api = apiFactory(baseUrl)
         val auth = api.getAuthentication("CookieAuth") as? ApiKeyAuth
         auth?.let {
             it.paramName = cookieName
@@ -33,23 +32,10 @@ class FloatsauceRepositoryImpl(
         return api
     }
 
-    private fun createCreatorApi(service: AuthService): CreatorV3Api {
-        val baseUrl = when (service) {
-            AuthService.FLOATPLANE -> "https://www.floatplane.com"
-            AuthService.SAUCE_PLUS -> "https://www.sauceplus.com"
-        }
-        val cookieName = when (service) {
-            AuthService.FLOATPLANE -> "sails.sid"
-            AuthService.SAUCE_PLUS -> "__Host-sp-sess"
-        }
-        val api = CreatorV3Api(baseUrl = baseUrl)
-        val auth = api.getAuthentication("CookieAuth") as? ApiKeyAuth
-        auth?.let {
-            it.paramName = cookieName
-            it.apiKey = secureStorage.get("cookie_${service.name}")
-        }
-        return api
-    }
+    private fun createSubscriptionsApi(service: AuthService) = createApi(service) { SubscriptionsV3Api(baseUrl = it) }
+    private fun createCreatorApi(service: AuthService) = createApi(service) { CreatorV3Api(baseUrl = it) }
+    private fun createContentApi(service: AuthService) = createApi(service) { ContentV3Api(baseUrl = it) }
+    private fun createDeliveryApi(service: AuthService) = createApi(service) { DeliveryV3Api(baseUrl = it) }
 
     override fun getServices(): List<AuthService> = AuthService.entries
 
@@ -82,27 +68,17 @@ class FloatsauceRepositoryImpl(
 
     override suspend fun getSubscriptions(service: AuthService): List<Creator> {
         val subsApi = createSubscriptionsApi(service)
-        val creatorApi = createCreatorApi(service)
         return try {
             val subsResponse = subsApi.listUserSubscriptionsV3()
             val subscriptions = subsResponse.body()
-            val creatorIds = subscriptions.map { it.creator }
-
-            if (creatorIds.isEmpty()) return emptyList()
-
-            // Fetch full creator info to get subscriber count and channels
-            val creatorsResponse = creatorApi.getCreatorByName(creatorIds)
-            val creatorModels = creatorsResponse.body().associateBy { it.id }
 
             subscriptions.map { sub ->
-                val creatorModel = creatorModels[sub.creator]
                 Creator(
                     id = sub.creator,
-                    name = creatorModel?.title ?: sub.plan.title,
-                    iconUrl = creatorModel?.icon?.path ?: sub.plan.logo,
-                    subscribers = creatorModel?.subscriberCountDisplay ?: "0",
-                    channels = creatorModel?.channels?.size ?: 0,
-                    posts = 0
+                    name = sub.plan.title,
+                    iconUrl = sub.plan.logo,
+                    channels = null,
+                    service = service
                 )
             }
         } catch (e: Exception) {
@@ -110,9 +86,53 @@ class FloatsauceRepositoryImpl(
         }
     }
 
-    override suspend fun getVideos(creatorId: String): List<Video> {
-        // Implement if needed, but the focus is on auth now.
-        return emptyList()
+    override suspend fun getCreatorDetails(service: AuthService, id: String): Creator? {
+        val creatorApi = createCreatorApi(service)
+        return try {
+            val response = creatorApi.getCreator(id)
+            val creatorModel = response.body()
+            Creator(
+                id = creatorModel.id,
+                name = creatorModel.title,
+                iconUrl = creatorModel.icon.path,
+                channels = creatorModel.channels.size,
+                service = service
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override suspend fun getVideos(service: AuthService, creatorId: String): List<Video> {
+        val contentApi = createContentApi(service)
+        return try {
+            val response = contentApi.getCreatorBlogPosts(id = creatorId, hasVideo = true)
+            val posts = response.body()
+            posts.mapNotNull { post ->
+                val videoId = post.videoAttachments?.firstOrNull() ?: return@mapNotNull null
+                Video(
+                    id = videoId,
+                    title = post.title,
+                    thumbnailUrl = post.thumbnail?.path,
+                    duration = formatDuration(post.metadata.videoDuration),
+                    videoUrl = videoId
+                )
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun formatDuration(seconds: Double): String {
+        val s = seconds.toInt()
+        val h = s / 3600
+        val m = (s % 3600) / 60
+        val sec = s % 60
+        return if (h > 0) {
+            "${h}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}"
+        } else {
+            "${m}:${sec.toString().padStart(2, '0')}"
+        }
     }
 
     override suspend fun requestDeviceAuth(service: AuthService) {

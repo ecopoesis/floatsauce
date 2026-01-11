@@ -53,6 +53,10 @@ class SwiftFloatsauceViewModel: ObservableObject {
         viewModel.selectCreator(creator: creator)
     }
     
+    func fetchCreatorDetails(creator: Creator) {
+        viewModel.fetchCreatorDetails(creator: creator)
+    }
+    
     func goBack() {
         DispatchQueue.main.async {
             self.viewModel.goBack()
@@ -201,7 +205,7 @@ struct SubscriptionsView: View {
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: 16) {
                         ForEach(viewModel.subscriptions, id: \.id) { creator in
-                            CreatorCard(creator: creator) {
+                            CreatorCard(creator: creator, viewModel: viewModel) {
                                 viewModel.selectCreator(creator: creator)
                             }
                         }
@@ -215,6 +219,7 @@ struct SubscriptionsView: View {
 
 struct CreatorCard: View {
     let creator: Creator
+    @ObservedObject var viewModel: SwiftFloatsauceViewModel
     let onClick: () -> Void
     
     var body: some View {
@@ -241,19 +246,11 @@ struct CreatorCard: View {
                         .foregroundColor(.white)
                         .lineLimit(1)
                     
-                    Text("\(creator.subscribers) Subscribers")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    
-                    if let channels = creator.channels, channels.intValue > 0 {
+                    if let channels = creator.channels, channels.intValue > 1 {
                         Text("\(channels.intValue) Channels")
                             .font(.caption)
                             .foregroundColor(.gray)
                     }
-                    
-                    Text("\(creator.posts) Posts")
-                        .font(.caption)
-                        .foregroundColor(.gray)
                 }
                 Spacer()
             }
@@ -262,6 +259,9 @@ struct CreatorCard: View {
             .cornerRadius(8)
         }
         .buttonStyle(PlainButtonStyle())
+        .onAppear {
+            viewModel.fetchCreatorDetails(creator: creator)
+        }
     }
 }
 

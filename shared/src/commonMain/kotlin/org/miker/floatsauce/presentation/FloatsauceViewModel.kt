@@ -100,8 +100,20 @@ class FloatsauceViewModel(
 
     fun selectCreator(creator: Creator) {
         viewModelScope.launch {
-            _videos.value = repository.getVideos(creator.id)
+            _videos.value = repository.getVideos(creator.service, creator.id)
             navigateTo(Screen.CreatorDetail(creator))
+        }
+    }
+
+    fun fetchCreatorDetails(creator: Creator) {
+        if (creator.channels != null) return
+        viewModelScope.launch {
+            val details = repository.getCreatorDetails(creator.service, creator.id)
+            if (details != null) {
+                _subscriptions.value = _subscriptions.value.map {
+                    if (it.id == creator.id) details else it
+                }
+            }
         }
     }
 

@@ -190,7 +190,7 @@ fun SubscriptionsScreen(service: AuthService, viewModel: FloatsauceViewModel) {
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(subscriptions) { creator ->
-                    CreatorCard(creator) {
+                    CreatorCard(creator, viewModel) {
                         viewModel.selectCreator(creator)
                     }
                 }
@@ -200,7 +200,10 @@ fun SubscriptionsScreen(service: AuthService, viewModel: FloatsauceViewModel) {
 }
 
 @Composable
-fun CreatorCard(creator: Creator, onClick: () -> Unit) {
+fun CreatorCard(creator: Creator, viewModel: FloatsauceViewModel, onClick: () -> Unit) {
+    LaunchedEffect(creator.id) {
+        viewModel.fetchCreatorDetails(creator)
+    }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -234,23 +237,13 @@ fun CreatorCard(creator: Creator, onClick: () -> Unit) {
                     ),
                     maxLines = 1
                 )
-                Text(
-                    text = "${creator.subscribers} Subscribers",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
-                if (channels != null && channels > 0) {
+                if (channels != null && channels > 1) {
                     Text(
                         text = "$channels Channels",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
                 }
-                Text(
-                    text = "${creator.posts} Posts",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
             }
         }
     }
