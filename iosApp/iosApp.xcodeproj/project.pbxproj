@@ -6,8 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A1B2C3D4E5F6A1B2C3D40003 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6A1B2C3D40002 /* Logging */; };
+		A1B2C3D4E5F6A1B2C3D40005 /* Shared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A1B2C3D40004 /* Shared.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		B74E06883F252D1284464C8C /* floatsauce.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = floatsauce.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1B2C3D4E5F6A1B2C3D40004 /* Shared.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Shared.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -41,6 +47,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1B2C3D4E5F6A1B2C3D40003 /* Logging in Frameworks */,
+				A1B2C3D4E5F6A1B2C3D40005 /* Shared.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -52,6 +60,7 @@
 			children = (
 				4AE9AD14CEBAEEAC4ED3FCF6 /* Configuration */,
 				311AD632867DAB7C3E6F7252 /* iosApp */,
+				A1B2C3D4E5F6A1B2C3D40006 /* Frameworks */,
 				6DC5289436E605F098C1434C /* Products */,
 			);
 			sourceTree = "<group>";
@@ -62,6 +71,14 @@
 				B74E06883F252D1284464C8C /* floatsauce.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F6A1B2C3D40006 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F6A1B2C3D40004 /* Shared.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -85,6 +102,7 @@
 			);
 			name = tvosApp;
 			packageProductDependencies = (
+				A1B2C3D4E5F6A1B2C3D40002 /* Logging */,
 			);
 			productName = tvosApp;
 			productReference = B74E06883F252D1284464C8C /* floatsauce.app */;
@@ -116,6 +134,9 @@
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 6DC5289436E605F098C1434C /* Products */;
+			packageReferences = (
+				A1B2C3D4E5F6A1B2C3D40001 /* XCRemoteSwiftPackageReference "swift-log" */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -368,6 +389,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A1B2C3D4E5F6A1B2C3D40001 /* XCRemoteSwiftPackageReference "swift-log" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-log.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.6.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A1B2C3D4E5F6A1B2C3D40002 /* Logging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D4E5F6A1B2C3D40001 /* XCRemoteSwiftPackageReference "swift-log" */;
+			productName = Logging;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = C7A65DA7ADBDBF1C4093A25D /* Project object */;
 }

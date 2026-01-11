@@ -28,12 +28,15 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.MediaItem
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import coil3.compose.AsyncImage
+import co.touchlab.kermit.Logger
 import floatsauce.composeapp.generated.resources.*
 import org.jetbrains.compose.resources.painterResource
 import org.miker.floatsauce.data.AndroidSecureStorage
@@ -287,9 +290,10 @@ fun CreatorDetailScreen(creator: Creator, viewModel: FloatsauceViewModel) {
     }
 }
 
+@OptIn(UnstableApi::class)
 @Composable
 fun VideoPlaybackScreen(video: Video, url: String, cookieName: String, cookieValue: String, origin: String, viewModel: FloatsauceViewModel) {
-    println("[DEBUG_LOG] Android VideoPlaybackScreen: playing $url with cookie $cookieName and origin $origin")
+    Logger.d { "Android VideoPlaybackScreen: playing $url with cookie $cookieName and origin $origin" }
     val context = LocalContext.current
     val exoPlayer = remember {
         val dataSourceFactory = DefaultHttpDataSource.Factory()

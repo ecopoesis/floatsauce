@@ -1,6 +1,13 @@
 import Shared
 import SwiftUI
 import AVKit
+import Logging
+
+let logger: Logger = {
+    var logger = Logger(label: "org.miker.floatsauce")
+    logger.logLevel = .debug
+    return logger
+}()
 
 class SwiftFloatsauceViewModel: ObservableObject {
     @Published var currentScreen: Screen = Screen.ServiceSelection()
@@ -321,7 +328,7 @@ class ResourceLoaderDelegate: NSObject, AVAssetResourceLoaderDelegate {
     func resourceLoader(_ resourceLoader: AVAssetResourceLoader, shouldWaitForLoadingOfRequestedResource loadingRequest: AVAssetResourceLoadingRequest) -> Bool {
         guard let url = loadingRequest.request.url else { return false }
         let urlString = url.absoluteString
-        print("[DEBUG_LOG] ResourceLoader intercepting: \(urlString)")
+        logger.debug("ResourceLoader intercepting: \(urlString)")
 
         var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         components?.scheme = "https"
@@ -340,14 +347,14 @@ class ResourceLoaderDelegate: NSObject, AVAssetResourceLoaderDelegate {
 
                 if let error = error {
                     if (error as NSError).code != NSURLErrorCancelled {
-                        print("[DEBUG_LOG] ResourceLoader error: \(error.localizedDescription) for \(urlString)")
+                        logger.debug("ResourceLoader error: \(error.localizedDescription) for \(urlString)")
                     }
                     loadingRequest.finishLoading(with: error)
                     return
                 }
 
                 guard let data = data, let httpResponse = response as? HTTPURLResponse else {
-                    print("[DEBUG_LOG] ResourceLoader invalid response for \(urlString)")
+                    logger.debug("ResourceLoader invalid response for \(urlString)")
                     loadingRequest.finishLoading(with: NSError(domain: "ResourceLoader", code: -1, userInfo: nil))
                     return
                 }
@@ -355,7 +362,7 @@ class ResourceLoaderDelegate: NSObject, AVAssetResourceLoaderDelegate {
                 let mimeType = httpResponse.mimeType?.lowercased() ?? ""
                 let isManifest = httpsUrl.pathExtension == "m3u8" || mimeType.contains("mpegurl")
                 
-                print("[DEBUG_LOG] ResourceLoader response \(httpResponse.statusCode) [\(data.count) bytes, \(mimeType)] for \(urlString)")
+                logger.debug("ResourceLoader response \(httpResponse.statusCode) [\(data.count) bytes, \(mimeType)] for \(urlString)")
 
                 if let contentInformationRequest = loadingRequest.contentInformationRequest {
                     contentInformationRequest.contentType = isManifest ? "com.apple.mpegurl" : mimeType
@@ -372,7 +379,7 @@ class ResourceLoaderDelegate: NSObject, AVAssetResourceLoaderDelegate {
                             if let contentInformationRequest = loadingRequest.contentInformationRequest {
                                 contentInformationRequest.contentLength = Int64(modifiedData.count)
                             }
-                            print("[DEBUG_LOG] ResourceLoader modified manifest [\(modifiedData.count) bytes] for \(urlString)")
+                            logger.debug("ResourceLoader modified manifest [\(modifiedData.count) bytes] for \(urlString)")
                             loadingRequest.dataRequest?.respond(with: modifiedData)
                             loadingRequest.finishLoading()
                             return
@@ -451,7 +458,7 @@ class ResourceLoaderDelegate: NSObject, AVAssetResourceLoaderDelegate {
 
     func resourceLoader(_ resourceLoader: AVAssetResourceLoader, didCancel loadingRequest: AVAssetResourceLoadingRequest) {
         if let task = tasks.removeValue(forKey: loadingRequest) {
-            print("[DEBUG_LOG] ResourceLoader cancelled request for: \(loadingRequest.request.url?.absoluteString ?? "unknown")")
+            logger.debug("ResourceLoader cancelled request for: \(loadingRequest.request.url?.absoluteString ?? "unknown")")
             task.cancel()
         }
     }
@@ -464,10 +471,10 @@ struct VideoPlayerView: UIViewControllerRepresentable {
     let origin: String
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
-        print("[DEBUG_LOG] tvOS VideoPlayerView: playing \(url.absoluteString)")
+        logger.debug("tvOS VideoPlayerView: playing \(url.absoluteString)")
 
         let userAgent = PlatformKt.getPlatform().userAgent
-        print("[DEBUG_LOG] tvOS VideoPlayerView User-Agent: \(userAgent)")
+        logger.debug("tvOS VideoPlayerView User-Agent: \(userAgent)")
 
         var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         components?.scheme = "floatsauce"

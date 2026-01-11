@@ -15,6 +15,7 @@ kotlin = "2.3.0"
 ktor = "3.3.3"
 kotlinx-serialization = "1.8.0"
 kotlinx-datetime = "0.6.1"
+kermit = "2.0.4"
 openapi-generator = "7.10.0"
 androidx-security-crypto = "1.1.0-alpha06"
 coil = "3.0.0-rc01"
@@ -43,6 +44,7 @@ ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "kto
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "androidx-security-crypto" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }

@@ -9,6 +9,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import co.touchlab.kermit.Logger
+import co.touchlab.kermit.Severity
 import org.miker.floatsauce.api.*
 import org.miker.floatsauce.domain.models.*
 import org.miker.floatsauce.getPlatform
@@ -20,6 +22,10 @@ class FloatsauceRepositoryImpl(
     private val secureStorage: SecureStorage
 ) : FloatsauceRepository {
 
+    init {
+        Logger.setMinSeverity(Severity.Debug)
+    }
+
     private fun <T : ApiClient> createApi(service: AuthService, apiFactory: (String, ((HttpClientConfig<*>) -> Unit)?) -> T): T {
         val baseUrl = service.origin
         val cookieName = when (service) {
@@ -30,9 +36,9 @@ class FloatsauceRepositoryImpl(
         val platform = getPlatform()
         val httpClientConfig: (HttpClientConfig<*>) -> Unit = { config ->
             config.install(Logging) {
-                logger = object : Logger {
+                logger = object : io.ktor.client.plugins.logging.Logger {
                     override fun log(message: String) {
-                        println("[DEBUG_LOG] Ktor: $message")
+                        Logger.d { "Ktor: $message" }
                     }
                 }
                 level = LogLevel.ALL
@@ -40,13 +46,13 @@ class FloatsauceRepositoryImpl(
             }
             config.install(DefaultRequest) {
                 val userAgent = platform.userAgent
-                println("[DEBUG_LOG] Setting User-Agent: $userAgent")
+                Logger.d { "Setting User-Agent: $userAgent" }
                 header(HttpHeaders.UserAgent, userAgent)
-                println("[DEBUG_LOG] Setting Origin: $baseUrl")
+                Logger.d { "Setting Origin: $baseUrl" }
                 header("Origin", baseUrl)
                 val cookie = secureStorage.get("cookie_${service.name}")
                 if (cookie != null) {
-                    println("[DEBUG_LOG] Setting Cookie: $cookieName=$cookie")
+                    Logger.d { "Setting Cookie: $cookieName=$cookie" }
                 }
             }
         }
@@ -175,7 +181,7 @@ class FloatsauceRepositoryImpl(
             } else {
                 "${baseUrl.removeSuffix("/")}/${variant.url.removePrefix("/")}"
             }
-            println("[DEBUG_LOG] Resolved Video URL: $url")
+            Logger.d { "Resolved Video URL: $url" }
             url
         } catch (e: Exception) {
             null
@@ -195,7 +201,7 @@ class FloatsauceRepositoryImpl(
     }
 
     override suspend fun requestDeviceAuth(service: AuthService) {
-        println("[DEBUG_LOG] POST to Device Authorization Endpoint for ${service.displayName}")
+        Logger.d { "POST to Device Authorization Endpoint for ${service.displayName}" }
     }
 
     override suspend fun pollForToken(service: AuthService): String? {

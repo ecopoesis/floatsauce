@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import co.touchlab.kermit.Logger
 import org.miker.floatsauce.data.FloatsauceRepository
 import org.miker.floatsauce.domain.models.*
 
@@ -108,11 +109,11 @@ class FloatsauceViewModel(
 
     fun playVideo(video: Video, creator: Creator) {
         viewModelScope.launch {
-            println("[DEBUG_LOG] playVideo: fetching stream URL for videoId=${video.id}")
+            Logger.d { "playVideo: fetching stream URL for videoId=${video.id}" }
             val url = repository.getVideoStreamUrl(creator.service, video.id)
             if (url != null) {
                 val cookie = repository.getCookie(creator.service)
-                println("[DEBUG_LOG] playVideo: navigating to VideoPlayback with url=$url, cookieName=${cookie?.first}, origin=${creator.service.origin}")
+                Logger.d { "playVideo: navigating to VideoPlayback with url=$url, cookieName=${cookie?.first}, origin=${creator.service.origin}" }
                 navigateTo(Screen.VideoPlayback(
                     video = video,
                     url = url,
@@ -121,7 +122,7 @@ class FloatsauceViewModel(
                     origin = creator.service.origin
                 ))
             } else {
-                println("[DEBUG_LOG] playVideo: failed to get stream URL")
+                Logger.d { "playVideo: failed to get stream URL" }
             }
         }
     }
@@ -139,7 +140,7 @@ class FloatsauceViewModel(
     }
 
     fun goBack() {
-        println("[DEBUG_LOG] goBack: current=${_currentScreen.value}, stackSize=${screenStack.size}")
+        Logger.d { "goBack: current=${_currentScreen.value}, stackSize=${screenStack.size}" }
         if (screenStack.isNotEmpty()) {
             val previous = screenStack.removeAt(screenStack.size - 1)
             _currentScreen.value = previous
