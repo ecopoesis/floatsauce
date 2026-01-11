@@ -29,8 +29,8 @@ class MockFloatsauceRepository : FloatsauceRepository {
     override suspend fun getSubscriptions(service: AuthService): List<Creator> {
         return if (service == AuthService.FLOATPLANE) {
             listOf(
-                Creator("linustech", "Linus Tech Tips", "https://cdn.floatplane.com/avatars/ltt.png"),
-                Creator("louisrossmann", "Louis Rossmann", "https://cdn.floatplane.com/avatars/rossmann.png")
+                Creator("linustech", "Linus Tech Tips", "https://cdn.floatplane.com/avatars/ltt.png", "1.2M", 5, 1200),
+                Creator("louisrossmann", "Louis Rossmann", "https://cdn.floatplane.com/avatars/rossmann.png", "250K", 1, 800)
             )
         } else {
             emptyList()

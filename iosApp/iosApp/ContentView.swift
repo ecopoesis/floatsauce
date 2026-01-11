@@ -54,7 +54,9 @@ class SwiftFloatsauceViewModel: ObservableObject {
     }
     
     func goBack() {
-        viewModel.goBack()
+        DispatchQueue.main.async {
+            self.viewModel.goBack()
+        }
     }
 }
 
@@ -67,16 +69,21 @@ struct ContentView: View {
                 ServiceSelectionView(viewModel: viewModel)
             } else if let qrScreen = viewModel.currentScreen as? Screen.QRLogin {
                 QRLoginView(service: qrScreen.service, viewModel: viewModel)
+                    .onExitCommand(perform: viewModel.goBack)
             } else if let failedScreen = viewModel.currentScreen as? Screen.AuthFailed {
                 AuthFailedView(service: failedScreen.service, viewModel: viewModel)
+                    .onExitCommand(perform: viewModel.goBack)
             } else if let subScreen = viewModel.currentScreen as? Screen.Subscriptions {
                 SubscriptionsView(service: subScreen.service, viewModel: viewModel)
+                    .onExitCommand(perform: viewModel.goBack)
             } else if let creatorScreen = viewModel.currentScreen as? Screen.CreatorDetail {
                 CreatorDetailView(creator: creatorScreen.creator, viewModel: viewModel)
+                    .onExitCommand(perform: viewModel.goBack)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black.edgesIgnoringSafeArea(.all))
+        .background(Color.black)
+        .edgesIgnoringSafeArea(.all)
     }
 }
 
@@ -145,31 +152,116 @@ struct AuthFailedView: View {
 struct SubscriptionsView: View {
     let service: AuthService
     @ObservedObject var viewModel: SwiftFloatsauceViewModel
+    
+    private var bannerName: String {
+        switch service {
+        case .floatplane: return "floatplane"
+        case .saucePlus: return "sauceplus"
+        default: return ""
+        }
+    }
+
+    private var siteName: String {
+        switch service {
+        case .floatplane: return "floatplane.com"
+        case .saucePlus: return "sauceplus.com"
+        default: return ""
+        }
+    }
+    
+    let columns = [
+        GridItem(.flexible()),
+        GridItem(.flexible()),
+        GridItem(.flexible()),
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
+    
     var body: some View {
-        VStack {
-            HStack {
-                Button("Back") { viewModel.goBack() }
-                Spacer()
-                Text("\(service.displayName) Subscriptions")
-                    .font(.title)
-                    .foregroundColor(.white)
-                Spacer()
+        VStack(spacing: 0) {
+            if !bannerName.isEmpty {
+                Image(bannerName)
+                    .resizable()
+                    .aspectRatio(3840/720, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
             }
-            .padding()
             
-            List(viewModel.subscriptions, id: \.id) { creator in
-                Button(action: { viewModel.selectCreator(creator: creator) }) {
-                    HStack {
-                        Circle()
-                            .fill(Color.gray)
-                            .frame(width: 50, height: 50)
-                        Text(creator.name)
-                            .foregroundColor(.white)
-                        Spacer()
+            if viewModel.subscriptions.isEmpty {
+                VStack(spacing: 20) {
+                    Spacer()
+                    Text("No subscriptions found. Please add subscriptions at \(siteName)")
+                        .foregroundColor(.white)
+                    Button("Back") {
+                        viewModel.goBack()
                     }
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 16) {
+                        ForEach(viewModel.subscriptions, id: \.id) { creator in
+                            CreatorCard(creator: creator) {
+                                viewModel.selectCreator(creator: creator)
+                            }
+                        }
+                    }
+                    .padding(16)
                 }
             }
         }
+    }
+}
+
+struct CreatorCard: View {
+    let creator: Creator
+    let onClick: () -> Void
+    
+    var body: some View {
+        Button(action: onClick) {
+            HStack(spacing: 12) {
+                if let iconUrl = creator.iconUrl, let url = URL(string: iconUrl) {
+                    AsyncImage(url: url) { image in
+                        image.resizable()
+                    } placeholder: {
+                        Color.gray
+                    }
+                    .frame(width: 80, height: 80)
+                    .clipShape(Circle())
+                } else {
+                    Circle()
+                        .fill(Color.gray)
+                        .frame(width: 80, height: 80)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(creator.name)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    
+                    Text("\(creator.subscribers) Subscribers")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    
+                    if let channels = creator.channels, channels.intValue > 0 {
+                        Text("\(channels.intValue) Channels")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    Text("\(creator.posts) Posts")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                Spacer()
+            }
+            .padding(12)
+            .background(Color(white: 30.0/255.0)) // 0xFF1E1E1E
+            .cornerRadius(8)
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 

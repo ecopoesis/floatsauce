@@ -2,7 +2,7 @@ package org.miker.floatsauce.domain.models
 
 enum class AuthService(val displayName: String) {
     FLOATPLANE("Floatplane"),
-    SAUCE_PLUS("Sauce Plus")
+    SAUCE_PLUS("Sauce+")
 }
 
 data class AuthState(
@@ -13,7 +13,10 @@ data class AuthState(
 data class Creator(
     val id: String,
     val name: String,
-    val iconUrl: String?
+    val iconUrl: String?,
+    val subscribers: String,
+    val channels: Int?,
+    val posts: Int
 )
 
 data class Video(

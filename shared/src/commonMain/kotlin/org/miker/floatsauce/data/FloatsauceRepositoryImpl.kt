@@ -4,16 +4,18 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import org.miker.floatsauce.api.CreatorV3Api
 import org.miker.floatsauce.api.SubscriptionsV3Api
 import org.miker.floatsauce.domain.models.*
 import org.openapitools.client.auth.ApiKeyAuth
 import org.openapitools.client.infrastructure.ApiClient
+import org.openapitools.client.infrastructure.HttpResponse
 
 class FloatsauceRepositoryImpl(
     private val secureStorage: SecureStorage
 ) : FloatsauceRepository {
 
-    private fun createApi(service: AuthService): SubscriptionsV3Api {
+    private fun createSubscriptionsApi(service: AuthService): SubscriptionsV3Api {
         val baseUrl = when (service) {
             AuthService.FLOATPLANE -> "https://www.floatplane.com"
             AuthService.SAUCE_PLUS -> "https://www.sauceplus.com"
@@ -31,6 +33,24 @@ class FloatsauceRepositoryImpl(
         return api
     }
 
+    private fun createCreatorApi(service: AuthService): CreatorV3Api {
+        val baseUrl = when (service) {
+            AuthService.FLOATPLANE -> "https://www.floatplane.com"
+            AuthService.SAUCE_PLUS -> "https://www.sauceplus.com"
+        }
+        val cookieName = when (service) {
+            AuthService.FLOATPLANE -> "sails.sid"
+            AuthService.SAUCE_PLUS -> "__Host-sp-sess"
+        }
+        val api = CreatorV3Api(baseUrl = baseUrl)
+        val auth = api.getAuthentication("CookieAuth") as? ApiKeyAuth
+        auth?.let {
+            it.paramName = cookieName
+            it.apiKey = secureStorage.get("cookie_${service.name}")
+        }
+        return api
+    }
+
     override fun getServices(): List<AuthService> = AuthService.entries
 
     override suspend fun getAuthState(service: AuthService): AuthState {
@@ -39,7 +59,7 @@ class FloatsauceRepositoryImpl(
             return AuthState(isLoggedIn = false, qrCodeUrl = getQrCodeUrl(service))
         }
 
-        val api = createApi(service)
+        val api = createSubscriptionsApi(service)
         return try {
             val response = api.listUserSubscriptionsV3()
             // If we get here, it's 200 OK (wrapped response)
@@ -61,14 +81,28 @@ class FloatsauceRepositoryImpl(
     }
 
     override suspend fun getSubscriptions(service: AuthService): List<Creator> {
-        val api = createApi(service)
+        val subsApi = createSubscriptionsApi(service)
+        val creatorApi = createCreatorApi(service)
         return try {
-            val response = api.listUserSubscriptionsV3()
-            response.body().map { 
+            val subsResponse = subsApi.listUserSubscriptionsV3()
+            val subscriptions = subsResponse.body()
+            val creatorIds = subscriptions.map { it.creator }
+
+            if (creatorIds.isEmpty()) return emptyList()
+
+            // Fetch full creator info to get subscriber count and channels
+            val creatorsResponse = creatorApi.getCreatorByName(creatorIds)
+            val creatorModels = creatorsResponse.body().associateBy { it.id }
+
+            subscriptions.map { sub ->
+                val creatorModel = creatorModels[sub.creator]
                 Creator(
-                    id = it.creator,
-                    name = it.plan.title,
-                    iconUrl = it.plan.logo
+                    id = sub.creator,
+                    name = creatorModel?.title ?: sub.plan.title,
+                    iconUrl = creatorModel?.icon?.path ?: sub.plan.logo,
+                    subscribers = creatorModel?.subscriberCountDisplay ?: "0",
+                    channels = creatorModel?.channels?.size ?: 0,
+                    posts = 0
                 )
             }
         } catch (e: Exception) {

@@ -24,6 +24,8 @@ class FloatsauceViewModel(
     private val repository: FloatsauceRepository
 ) : ViewModel() {
 
+    private val screenStack = mutableListOf<Screen>()
+
     private val _currentScreen = MutableStateFlow<Screen>(Screen.ServiceSelection)
     val currentScreen: StateFlow<Screen> = _currentScreen.asStateFlow()
 
@@ -39,6 +41,19 @@ class FloatsauceViewModel(
     private val _authState = MutableStateFlow<AuthState?>(null)
     val authState: StateFlow<AuthState?> = _authState.asStateFlow()
 
+    private fun navigateTo(screen: Screen) {
+        if (_currentScreen.value != screen) {
+            screenStack.add(_currentScreen.value)
+            _currentScreen.value = screen
+        }
+    }
+
+    private fun navigateToSubscriptions(service: AuthService) {
+        _currentScreen.value = Screen.Subscriptions(service)
+        screenStack.clear()
+        screenStack.add(Screen.ServiceSelection)
+    }
+
     fun selectService(service: AuthService) {
         viewModelScope.launch {
             _authState.value = null // Reset auth state before checking
@@ -46,9 +61,9 @@ class FloatsauceViewModel(
             _authState.value = auth
             if (auth.isLoggedIn) {
                 _subscriptions.value = repository.getSubscriptions(service)
-                _currentScreen.value = Screen.Subscriptions(service)
+                navigateToSubscriptions(service)
             } else {
-                _currentScreen.value = Screen.QRLogin(service)
+                navigateTo(Screen.QRLogin(service))
                 startPolling(service)
             }
         }
@@ -70,7 +85,7 @@ class FloatsauceViewModel(
                     if (auth.isLoggedIn) {
                         _authState.value = auth
                         _subscriptions.value = repository.getSubscriptions(service)
-                        _currentScreen.value = Screen.Subscriptions(service)
+                        navigateToSubscriptions(service)
                         success = true
                         break
                     }
@@ -78,7 +93,7 @@ class FloatsauceViewModel(
             }
 
             if (!success) {
-                _currentScreen.value = Screen.AuthFailed(service)
+                _currentScreen.value = Screen.AuthFailed(service) // Don't add AuthFailed to stack? Or maybe yes.
             }
         }
     }
@@ -86,24 +101,21 @@ class FloatsauceViewModel(
     fun selectCreator(creator: Creator) {
         viewModelScope.launch {
             _videos.value = repository.getVideos(creator.id)
-            _currentScreen.value = Screen.CreatorDetail(creator)
+            navigateTo(Screen.CreatorDetail(creator))
         }
     }
 
     fun goBack() {
-        val current = _currentScreen.value
-        _currentScreen.value = when (current) {
-            is Screen.ServiceSelection -> Screen.ServiceSelection
-            is Screen.QRLogin -> Screen.ServiceSelection
-            is Screen.AuthFailed -> Screen.ServiceSelection
-            is Screen.Subscriptions -> Screen.ServiceSelection
-            is Screen.CreatorDetail -> {
-                // Determine which subscriptions to go back to based on context or just previous state
-                // For now, simpler:
-                Screen.ServiceSelection // Or track stack
+        println("[DEBUG_LOG] goBack: current=${_currentScreen.value}, stackSize=${screenStack.size}")
+        if (screenStack.isNotEmpty()) {
+            val previous = screenStack.removeAt(screenStack.size - 1)
+            _currentScreen.value = previous
+            if (previous == Screen.ServiceSelection) {
+                _authState.value = null
             }
-        }
-        if (_currentScreen.value == Screen.ServiceSelection) {
+        } else {
+            // Root screen, could exit but we don't have that control here easily
+            _currentScreen.value = Screen.ServiceSelection
             _authState.value = null
         }
     }
