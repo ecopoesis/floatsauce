@@ -47,6 +47,13 @@ tasks.withType<org.openapitools.generator.gradle.plugin.tasks.GenerateTask> {
                             content = content.replace(") : kotlin.collections.HashMap<String, @Contextual kotlin.Any>()", ")")
                             modified = true
                         }
+                        if (file.name == "ImageModel.kt") {
+                            if (content.contains("@Required val childImages: kotlin.collections.List<ChildImageModel>?")) {
+                                content = content.replace("@Required val childImages: kotlin.collections.List<ChildImageModel>?",
+                                    "val childImages: kotlin.collections.List<ChildImageModel>? = null")
+                                modified = true
+                            }
+                        }
                     }
 
                     // ApiClient fixes
