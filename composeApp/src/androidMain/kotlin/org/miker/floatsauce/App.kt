@@ -160,6 +160,8 @@ fun AuthFailedScreen(service: AuthService, viewModel: FloatsauceViewModel) {
 @Composable
 fun SubscriptionsScreen(service: AuthService, viewModel: FloatsauceViewModel) {
     val subscriptions by viewModel.subscriptions.collectAsState()
+    val allCreators by viewModel.browseCreators.collectAsState()
+    val browseCreators = allCreators.filter { creator -> subscriptions.none { it.id == creator.id } }
 
     BackHandler {
         viewModel.goBack()
@@ -178,7 +180,7 @@ fun SubscriptionsScreen(service: AuthService, viewModel: FloatsauceViewModel) {
             contentScale = ContentScale.FillWidth
         )
 
-        if (subscriptions.isEmpty()) {
+        if (subscriptions.isEmpty() && browseCreators.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     val site = when (service) {
@@ -205,9 +207,33 @@ fun SubscriptionsScreen(service: AuthService, viewModel: FloatsauceViewModel) {
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(subscriptions) { creator ->
-                    CreatorCard(creator, viewModel) {
-                        viewModel.selectCreator(creator)
+                if (subscriptions.isNotEmpty()) {
+                    item(span = { GridItemSpan(5) }) {
+                        Text(
+                            text = "Your subscriptions",
+                            style = MaterialTheme.typography.headlineSmall,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+                    items(subscriptions) { creator ->
+                        CreatorCard(creator, viewModel) {
+                            viewModel.selectCreator(creator)
+                        }
+                    }
+                }
+
+                if (browseCreators.isNotEmpty()) {
+                    item(span = { GridItemSpan(5) }) {
+                        Text(
+                            text = "Browse creators",
+                            style = MaterialTheme.typography.headlineSmall,
+                            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
+                        )
+                    }
+                    items(browseCreators) { creator ->
+                        CreatorCard(creator, viewModel) {
+                            viewModel.selectCreator(creator)
+                        }
                     }
                 }
             }

@@ -37,6 +37,9 @@ class FloatsauceViewModel(
     private val _subscriptions = MutableStateFlow<List<Creator>>(emptyList())
     val subscriptions: StateFlow<List<Creator>> = _subscriptions.asStateFlow()
 
+    private val _browseCreators = MutableStateFlow<List<Creator>>(emptyList())
+    val browseCreators: StateFlow<List<Creator>> = _browseCreators.asStateFlow()
+
     private val _videos = MutableStateFlow<List<Video>>(emptyList())
     val videos: StateFlow<List<Video>> = _videos.asStateFlow()
 
@@ -63,6 +66,7 @@ class FloatsauceViewModel(
             _authState.value = auth
             if (auth.isLoggedIn) {
                 _subscriptions.value = repository.getSubscriptions(service)
+                _browseCreators.value = repository.getCreators(service)
                 navigateToSubscriptions(service)
             } else {
                 navigateTo(Screen.QRLogin(service))
@@ -87,6 +91,7 @@ class FloatsauceViewModel(
                     if (auth.isLoggedIn) {
                         _authState.value = auth
                         _subscriptions.value = repository.getSubscriptions(service)
+                        _browseCreators.value = repository.getCreators(service)
                         navigateToSubscriptions(service)
                         success = true
                         break
@@ -157,6 +162,7 @@ class FloatsauceViewModel(
     fun watchCurrentScreen(onEach: (Screen) -> Unit) = currentScreen.onEach { onEach(it) }.launchIn(viewModelScope)
     fun watchServices(onEach: (List<AuthService>) -> Unit) = services.onEach { onEach(it) }.launchIn(viewModelScope)
     fun watchSubscriptions(onEach: (List<Creator>) -> Unit) = subscriptions.onEach { onEach(it) }.launchIn(viewModelScope)
+    fun watchBrowseCreators(onEach: (List<Creator>) -> Unit) = browseCreators.onEach { onEach(it) }.launchIn(viewModelScope)
     fun watchVideos(onEach: (List<Video>) -> Unit) = videos.onEach { onEach(it) }.launchIn(viewModelScope)
     fun watchAuthState(onEach: (AuthState?) -> Unit) = authState.onEach { onEach(it) }.launchIn(viewModelScope)
 }

@@ -28,8 +28,14 @@ struct SubscriptionsView: View {
         GridItem(.flexible())
     ]
     
+    private var browseCreators: [Creator] {
+        viewModel.browseCreators.filter { creator in
+            !viewModel.subscriptions.contains(where: { $0.id == creator.id })
+        }
+    }
+    
     var body: some View {
-        if viewModel.subscriptions.isEmpty {
+        if viewModel.subscriptions.isEmpty && browseCreators.isEmpty {
             VStack(spacing: 0) {
                 if !bannerName.isEmpty {
                     Image(bannerName)
@@ -51,7 +57,7 @@ struct SubscriptionsView: View {
             }
         } else {
             ScrollView {
-                VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 0) {
                     if !bannerName.isEmpty {
                         Image(bannerName)
                             .resizable()
@@ -59,15 +65,41 @@ struct SubscriptionsView: View {
                             .frame(maxWidth: .infinity)
                     }
                     
-                    LazyVGrid(columns: columns, spacing: 60) {
-                        ForEach(viewModel.subscriptions, id: \.id) { creator in
-                            CreatorCard(creator: creator, viewModel: viewModel) {
-                                viewModel.selectCreator(creator: creator)
+                    if !viewModel.subscriptions.isEmpty {
+                        Text("Your subscriptions")
+                            .font(.headline)
+                            .padding(.horizontal, 60)
+                            .padding(.top, 40)
+                        
+                        LazyVGrid(columns: columns, spacing: 60) {
+                            ForEach(viewModel.subscriptions, id: \.id) { creator in
+                                CreatorCard(creator: creator, viewModel: viewModel) {
+                                    viewModel.selectCreator(creator: creator)
+                                }
                             }
                         }
+                        .padding(.horizontal, 60)
+                        .padding(.top, 20)
                     }
-                    .padding(60)
+                    
+                    if !browseCreators.isEmpty {
+                        Text("Browse creators")
+                            .font(.headline)
+                            .padding(.horizontal, 60)
+                            .padding(.top, 40)
+                        
+                        LazyVGrid(columns: columns, spacing: 60) {
+                            ForEach(browseCreators, id: \.id) { creator in
+                                CreatorCard(creator: creator, viewModel: viewModel) {
+                                    viewModel.selectCreator(creator: creator)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 60)
+                        .padding(.top, 20)
+                    }
                 }
+                .padding(.bottom, 60)
             }
         }
     }

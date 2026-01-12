@@ -5,6 +5,7 @@ class SwiftFloatsauceViewModel: ObservableObject {
     @Published var currentScreen: Screen = Screen.ServiceSelection()
     @Published var services: [AuthService] = []
     @Published var subscriptions: [Creator] = []
+    @Published var browseCreators: [Creator] = []
     @Published var videos: [Video] = []
     @Published var authState: AuthState? = nil
     
@@ -29,6 +30,12 @@ class SwiftFloatsauceViewModel: ObservableObject {
         viewModel.watchSubscriptions { [weak self] subscriptions in
             DispatchQueue.main.async {
                 self?.subscriptions = subscriptions
+            }
+        }
+        
+        viewModel.watchBrowseCreators { [weak self] browseCreators in
+            DispatchQueue.main.async {
+                self?.browseCreators = browseCreators
             }
         }
         

@@ -9,6 +9,7 @@ interface FloatsauceRepository {
     fun getServices(): List<AuthService>
     suspend fun getAuthState(service: AuthService): AuthState
     suspend fun getSubscriptions(service: AuthService): List<Creator>
+    suspend fun getCreators(service: AuthService): List<Creator>
     suspend fun getCreatorDetails(service: AuthService, id: String): Creator?
     suspend fun getVideos(service: AuthService, creatorId: String): List<Video>
     suspend fun getVideoStreamUrl(service: AuthService, videoId: String): String?
@@ -34,6 +35,18 @@ class MockFloatsauceRepository : FloatsauceRepository {
             listOf(
                 Creator("linustech", "Linus Tech Tips", "https://cdn.floatplane.com/avatars/ltt.png", null, 5, service),
                 Creator("louisrossmann", "Louis Rossmann", "https://cdn.floatplane.com/avatars/rossmann.png", null, 1, service)
+            )
+        } else {
+            emptyList()
+        }
+    }
+
+    override suspend fun getCreators(service: AuthService): List<Creator> {
+        return if (service == AuthService.FLOATPLANE) {
+            listOf(
+                Creator("linustech", "Linus Tech Tips", "https://cdn.floatplane.com/avatars/ltt.png", null, 5, service),
+                Creator("louisrossmann", "Louis Rossmann", "https://cdn.floatplane.com/avatars/rossmann.png", null, 1, service),
+                Creator("bitwit", "Bitwit", "https://cdn.floatplane.com/avatars/bitwit.png", null, 1, service)
             )
         } else {
             emptyList()

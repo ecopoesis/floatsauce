@@ -123,6 +123,27 @@ class FloatsauceRepositoryImpl(
         }
     }
 
+    override suspend fun getCreators(service: AuthService): List<Creator> {
+        val creatorApi = createCreatorApi(service)
+        return try {
+            val response = creatorApi.getCreators(search = "")
+            val creators = response.body()
+
+            creators.map { creator ->
+                Creator(
+                    id = creator.id,
+                    name = creator.title,
+                    iconUrl = creator.icon.path,
+                    bannerUrl = creator.cover?.path,
+                    channels = creator.channels.size,
+                    service = service
+                )
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     override suspend fun getCreatorDetails(service: AuthService, id: String): Creator? {
         val creatorApi = createCreatorApi(service)
         return try {

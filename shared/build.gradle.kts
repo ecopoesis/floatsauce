@@ -176,7 +176,7 @@ kotlin {
     }
 }
 
-tasks.matching { it.name.startsWith("compile") }.configureEach {
+tasks.matching { it.name.startsWith("compile") || it.name.contains("prepareAndroidMainArtProfile", ignoreCase = true) }.configureEach {
     dependsOn("generateSecrets")
     dependsOn("openApiGenerate")
 }
