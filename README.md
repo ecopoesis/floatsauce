@@ -38,6 +38,46 @@ This is a Kotlin Multiplatform project targeting AndroidTV and tvOS for view Flo
 | Choose video resolution       |        ❌        |      ❌      |         ❌          |       ❌        | 
 
 
+### Screen Flow
+
+```mermaid
+graph TD
+    ServiceSelection[Service Selection]
+    QRLogin[QR Login]
+    AuthFailed[Auth Failed]
+    Subscriptions[Subscriptions]
+    CreatorDetail[Creator Detail]
+    VideoPlayback[Video Playback]
+    LoggedOut[Logged Out]
+    SettingsOverlay[Settings Overlay]
+
+    ServiceSelection -- "Select Service (Not Logged In)" --> QRLogin
+    ServiceSelection -- "Select Service (Logged In)" --> Subscriptions
+    
+    QRLogin -- "Success" --> Subscriptions
+    QRLogin -- "Failure" --> AuthFailed
+    QRLogin -- "Back" --> ServiceSelection
+    
+    AuthFailed -- "Back" --> ServiceSelection
+    
+    Subscriptions -- "Select Creator" --> CreatorDetail
+    Subscriptions -- "Back" --> ServiceSelection
+    Subscriptions -- "Open Settings" --> SettingsOverlay
+    
+    CreatorDetail -- "Select Video" --> VideoPlayback
+    CreatorDetail -- "Back" --> Subscriptions
+    CreatorDetail -- "Open Settings" --> SettingsOverlay
+    
+    VideoPlayback -- "Back" --> CreatorDetail
+    
+    SettingsOverlay -- "Logout" --> LoggedOut
+    SettingsOverlay -- "Login" --> QRLogin
+    SettingsOverlay -- "Close" --> Subscriptions
+    SettingsOverlay -- "Close" --> CreatorDetail
+
+    LoggedOut -- "Back" --> ServiceSelection
+```
+
 ### Structure
 
 * [/composeApp](./composeApp/src) is for code that will be shared across your Compose Multiplatform applications.
