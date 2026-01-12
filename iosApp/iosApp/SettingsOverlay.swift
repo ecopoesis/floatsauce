@@ -38,21 +38,31 @@ struct SettingsOverlay: View {
                             .font(.title3)
                             .padding(.bottom, 20)
 
+                        let floatplaneLoggedIn = viewModel.loginStatuses[.floatplane] ?? false
                         Button(action: {
-                            viewModel.logout(service: .floatplane)
+                            if floatplaneLoggedIn {
+                                viewModel.logout(service: .floatplane)
+                            } else {
+                                viewModel.selectService(service: .floatplane)
+                            }
                             isPresented = false
                         }) {
-                            Text("Logout of Floatplane")
+                            Text(floatplaneLoggedIn ? "Logout of Floatplane" : "Login to Floatplane")
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .focused($focusedButton, equals: 0)
                         .glassEffect(.regular)
 
+                        let saucePlusLoggedIn = viewModel.loginStatuses[.saucePlus] ?? false
                         Button(action: {
-                            viewModel.logout(service: .saucePlus)
+                            if saucePlusLoggedIn {
+                                viewModel.logout(service: .saucePlus)
+                            } else {
+                                viewModel.selectService(service: .saucePlus)
+                            }
                             isPresented = false
                         }) {
-                            Text("Logout of Sauce+")
+                            Text(saucePlusLoggedIn ? "Logout of Sauce+" : "Login to Sauce+")
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .focused($focusedButton, equals: 1)

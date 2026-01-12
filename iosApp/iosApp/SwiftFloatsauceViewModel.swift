@@ -9,6 +9,7 @@ class SwiftFloatsauceViewModel: ObservableObject {
     @Published var videos: [Video] = []
     @Published var selectedChannel: Channel? = nil
     @Published var authState: AuthState? = nil
+    @Published var loginStatuses: [AuthService: Bool] = [:]
     
     private let viewModel: FloatsauceViewModel
     
@@ -55,6 +56,18 @@ class SwiftFloatsauceViewModel: ObservableObject {
         viewModel.watchAuthState { [weak self] authState in
             DispatchQueue.main.async {
                 self?.authState = authState
+            }
+        }
+        
+        viewModel.watchLoginStatuses { [weak self] loginStatuses in
+            DispatchQueue.main.async {
+                var statuses: [AuthService: Bool] = [:]
+                for (key, value) in loginStatuses {
+                    if let service = key as? AuthService {
+                        statuses[service] = (value as? Bool) ?? (value as? NSNumber)?.boolValue ?? false
+                    }
+                }
+                self?.loginStatuses = statuses
             }
         }
     }

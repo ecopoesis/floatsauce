@@ -55,6 +55,23 @@ class FloatsauceViewModel(
     private val _authState = MutableStateFlow<AuthState?>(null)
     val authState: StateFlow<AuthState?> = _authState.asStateFlow()
 
+    private val _loginStatuses = MutableStateFlow<Map<AuthService, Boolean>>(emptyMap())
+    val loginStatuses: StateFlow<Map<AuthService, Boolean>> = _loginStatuses.asStateFlow()
+
+    init {
+        updateLoginStatuses()
+    }
+
+    private fun updateLoginStatuses() {
+        viewModelScope.launch {
+            val statuses = mutableMapOf<AuthService, Boolean>()
+            for (service in repository.getServices()) {
+                statuses[service] = repository.getCookie(service) != null
+            }
+            _loginStatuses.value = statuses
+        }
+    }
+
     private fun navigateTo(screen: Screen) {
         if (_currentScreen.value != screen) {
             screenStack.add(_currentScreen.value)
@@ -101,6 +118,7 @@ class FloatsauceViewModel(
                         _authState.value = auth
                         _subscriptions.value = repository.getSubscriptions(service)
                         _browseCreators.value = repository.getCreators(service)
+                        updateLoginStatuses()
                         navigateToSubscriptions(service)
                         success = true
                         break
@@ -210,6 +228,7 @@ class FloatsauceViewModel(
     fun logout(service: AuthService) {
         viewModelScope.launch {
             repository.logout(service)
+            updateLoginStatuses()
             val current = _currentScreen.value
             val shouldNavigateToLoggedOut = when (current) {
                 is Screen.Subscriptions -> current.service == service
@@ -248,4 +267,5 @@ class FloatsauceViewModel(
     fun watchVideos(onEach: (List<Video>) -> Unit) = videos.onEach { onEach(it) }.launchIn(viewModelScope)
     fun watchSelectedChannel(onEach: (Channel?) -> Unit) = selectedChannel.onEach { onEach(it) }.launchIn(viewModelScope)
     fun watchAuthState(onEach: (AuthState?) -> Unit) = authState.onEach { onEach(it) }.launchIn(viewModelScope)
+    fun watchLoginStatuses(onEach: (Map<AuthService, Boolean>) -> Unit) = loginStatuses.onEach { onEach(it) }.launchIn(viewModelScope)
 }

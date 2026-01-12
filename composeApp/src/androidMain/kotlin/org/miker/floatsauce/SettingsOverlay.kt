@@ -31,6 +31,7 @@ fun SettingsOverlay(
     viewModel: FloatsauceViewModel
 ) {
     val focusRequester = remember { FocusRequester() }
+    val loginStatuses by viewModel.loginStatuses.collectAsState()
 
     LaunchedEffect(isVisible) {
         if (isVisible) {
@@ -64,19 +65,29 @@ fun SettingsOverlay(
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
+                    val floatplaneLoggedIn = loginStatuses[AuthService.FLOATPLANE] ?: false
                     SettingsMenuButton(
-                        text = "Logout of Floatplane",
+                        text = if (floatplaneLoggedIn) "Logout of Floatplane" else "Login to Floatplane",
                         onClick = {
-                            viewModel.logout(AuthService.FLOATPLANE)
+                            if (floatplaneLoggedIn) {
+                                viewModel.logout(AuthService.FLOATPLANE)
+                            } else {
+                                viewModel.selectService(AuthService.FLOATPLANE)
+                            }
                             onDismiss()
                         },
                         modifier = Modifier.focusRequester(focusRequester)
                     )
 
+                    val saucePlusLoggedIn = loginStatuses[AuthService.SAUCE_PLUS] ?: false
                     SettingsMenuButton(
-                        text = "Logout of Sauce+",
+                        text = if (saucePlusLoggedIn) "Logout of Sauce+" else "Login to Sauce+",
                         onClick = {
-                            viewModel.logout(AuthService.SAUCE_PLUS)
+                            if (saucePlusLoggedIn) {
+                                viewModel.logout(AuthService.SAUCE_PLUS)
+                            } else {
+                                viewModel.selectService(AuthService.SAUCE_PLUS)
+                            }
                             onDismiss()
                         }
                     )
