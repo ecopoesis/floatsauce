@@ -4,6 +4,7 @@ import SwiftUI
 struct SubscriptionsView: View {
     let service: AuthService
     @ObservedObject var viewModel: SwiftFloatsauceViewModel
+    @State private var showSettings = false
     
     private var bannerName: String {
         switch service {
@@ -36,77 +37,102 @@ struct SubscriptionsView: View {
     }
     
     var body: some View {
-        if viewModel.subscriptions.isEmpty && browseCreators.isEmpty {
-            VStack(spacing: 0) {
-                if !bannerName.isEmpty {
-                    Image(bannerName)
-                        .resizable()
-                        .aspectRatio(3840/720, contentMode: .fit)
-                        .frame(maxWidth: .infinity)
-                }
-                
-                VStack(spacing: 20) {
-                    Spacer()
-                    Text("No subscriptions found. Please add subscriptions at \(siteName)")
-                        .foregroundColor(.white)
-                    Button("Back") {
-                        viewModel.goBack()
-                    }
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        } else {
-            let showHeaders = !viewModel.subscriptions.isEmpty && !browseCreators.isEmpty
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    if !bannerName.isEmpty {
-                        Image(bannerName)
-                            .resizable()
-                            .aspectRatio(3840/720, contentMode: .fit)
-                            .frame(maxWidth: .infinity)
-                    }
-                    
-                    if !viewModel.subscriptions.isEmpty {
-                        if showHeaders {
-                            Text("Your subscriptions")
-                                .font(.headline)
-                                .padding(.horizontal, 60)
-                                .padding(.top, 40)
-                        }
-                        
-                        LazyVGrid(columns: columns, spacing: 60) {
-                            ForEach(viewModel.subscriptions, id: \.id) { creator in
-                                CreatorCard(creator: creator, viewModel: viewModel) {
-                                    viewModel.selectCreator(creator: creator)
+        ZStack {
+            Group {
+                if viewModel.subscriptions.isEmpty && browseCreators.isEmpty {
+                    VStack(spacing: 0) {
+                        if !bannerName.isEmpty {
+                            ZStack(alignment: .topTrailing) {
+                                Image(bannerName)
+                                    .resizable()
+                                    .aspectRatio(3840/720, contentMode: .fit)
+                                    .frame(maxWidth: .infinity)
+                                
+                                HStack {
+                                    Spacer()
+                                    SettingsButton(action: { showSettings = true })
+                                        .padding(40)
                                 }
+                                .focusSection()
                             }
                         }
-                        .padding(.horizontal, 60)
-                        .padding(.top, showHeaders ? 20 : 40)
-                    }
-                    
-                    if !browseCreators.isEmpty {
-                        if showHeaders {
-                            Text("Browse creators")
-                                .font(.headline)
-                                .padding(.horizontal, 60)
-                                .padding(.top, 40)
-                        }
                         
-                        LazyVGrid(columns: columns, spacing: 60) {
-                            ForEach(browseCreators, id: \.id) { creator in
-                                CreatorCard(creator: creator, viewModel: viewModel) {
-                                    viewModel.selectCreator(creator: creator)
+                        VStack(spacing: 20) {
+                            Spacer()
+                            Text("No subscriptions found. Please add subscriptions at \(siteName)")
+                                .foregroundColor(.white)
+                            Button("Back") {
+                                viewModel.goBack()
+                            }
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                } else {
+                    let showHeaders = !viewModel.subscriptions.isEmpty && !browseCreators.isEmpty
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 0) {
+                            if !bannerName.isEmpty {
+                                ZStack(alignment: .topTrailing) {
+                                    Image(bannerName)
+                                        .resizable()
+                                        .aspectRatio(3840/720, contentMode: .fit)
+                                        .frame(maxWidth: .infinity)
+                                    
+                                    HStack {
+                                        Spacer()
+                                        SettingsButton(action: { showSettings = true })
+                                            .padding(40)
+                                    }
+                                    .focusSection()
                                 }
                             }
+                            
+                            if !viewModel.subscriptions.isEmpty {
+                                if showHeaders {
+                                    Text("Your subscriptions")
+                                        .font(.headline)
+                                        .padding(.horizontal, 60)
+                                        .padding(.top, 40)
+                                }
+                                
+                                LazyVGrid(columns: columns, spacing: 60) {
+                                    ForEach(viewModel.subscriptions, id: \.id) { creator in
+                                        CreatorCard(creator: creator, viewModel: viewModel) {
+                                            viewModel.selectCreator(creator: creator)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 60)
+                                .padding(.top, showHeaders ? 20 : 40)
+                            }
+                            
+                            if !browseCreators.isEmpty {
+                                if showHeaders {
+                                    Text("Browse creators")
+                                        .font(.headline)
+                                        .padding(.horizontal, 60)
+                                        .padding(.top, 40)
+                                }
+                                
+                                LazyVGrid(columns: columns, spacing: 60) {
+                                    ForEach(browseCreators, id: \.id) { creator in
+                                        CreatorCard(creator: creator, viewModel: viewModel) {
+                                            viewModel.selectCreator(creator: creator)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 60)
+                                .padding(.top, showHeaders ? 20 : 40)
+                            }
                         }
-                        .padding(.horizontal, 60)
-                        .padding(.top, showHeaders ? 20 : 40)
+                        .padding(.bottom, 60)
                     }
                 }
-                .padding(.bottom, 60)
             }
+            .disabled(showSettings)
+            
+            SettingsOverlay(isPresented: $showSettings, viewModel: viewModel)
         }
     }
 }

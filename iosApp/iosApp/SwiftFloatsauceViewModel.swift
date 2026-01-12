@@ -83,6 +83,10 @@ class SwiftFloatsauceViewModel: ObservableObject {
         viewModel.fetchCreatorDetails(creator: creator)
     }
     
+    func logout(service: AuthService) {
+        viewModel.logout(service: service)
+    }
+    
     func goBack() {
         DispatchQueue.main.async {
             self.viewModel.goBack()

@@ -19,6 +19,7 @@ interface FloatsauceRepository {
     suspend fun pollForToken(service: AuthService): String?
     suspend fun saveToken(service: AuthService, token: String)
     suspend fun getCookie(service: AuthService): Pair<String, String>?
+    suspend fun logout(service: AuthService)
 }
 
 class MockFloatsauceRepository : FloatsauceRepository {
@@ -88,5 +89,9 @@ class MockFloatsauceRepository : FloatsauceRepository {
 
     override suspend fun getCookie(service: AuthService): Pair<String, String>? {
         return "sails.sid" to "mock-cookie"
+    }
+
+    override suspend fun logout(service: AuthService) {
+        // Mock
     }
 }

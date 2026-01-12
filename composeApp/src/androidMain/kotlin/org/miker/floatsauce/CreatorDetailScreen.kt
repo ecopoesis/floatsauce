@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import androidx.compose.ui.focus.focusProperties
 import org.miker.floatsauce.domain.models.Channel
 import org.miker.floatsauce.domain.models.Creator
 import org.miker.floatsauce.domain.models.Video
@@ -59,62 +60,83 @@ fun CreatorDetailScreen(creator: Creator, viewModel: FloatsauceViewModel) {
         viewModel.fetchCreatorDetails(creator)
     }
 
+    var showSettings by remember { mutableStateOf(false) }
+
     BackHandler {
-        viewModel.goBack()
+        if (showSettings) {
+            showSettings = false
+        } else {
+            viewModel.goBack()
+        }
     }
 
-    LazyVerticalGrid(
-        state = gridState,
-        columns = GridCells.Fixed(3),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 32.dp)
-    ) {
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            // Banner
-            AsyncImage(
-                model = currentCreator.bannerUrl,
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(3840f / 720f)
-                    .background(Color.DarkGray),
-                contentScale = ContentScale.Crop
-            )
-        }
-
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Text(
-                text = currentCreator.name,
-                style = MaterialTheme.typography.headlineLarge,
-                modifier = Modifier.padding(horizontal = 32.dp, vertical = 24.dp),
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        if (channels != null && channels.size > 1) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyVerticalGrid(
+            state = gridState,
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.fillMaxSize()
+                .focusProperties { canFocus = !showSettings },
+            contentPadding = PaddingValues(bottom = 32.dp)
+        ) {
             item(span = { GridItemSpan(maxLineSpan) }) {
-                ChannelBar(currentCreator, selectedChannel, viewModel)
-            }
-        }
+                Box {
+                    // Banner
+                    AsyncImage(
+                        model = currentCreator.bannerUrl,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(3840f / 720f)
+                            .background(Color.DarkGray),
+                        contentScale = ContentScale.Crop
+                    )
 
-        if (videos.isEmpty()) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 100.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Button(onClick = { viewModel.goBack() }) {
-                        Text("No videos found")
+                    Box(modifier = Modifier.align(Alignment.TopEnd)) {
+                        SettingsButton(onClick = { showSettings = true })
                     }
                 }
             }
-        } else {
-            items(videos) { video ->
-                VideoCard(video, creator, viewModel)
+
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    text = currentCreator.name,
+                    style = MaterialTheme.typography.headlineLarge,
+                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 24.dp),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            if (channels != null && channels.size > 1) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    ChannelBar(currentCreator, selectedChannel, viewModel)
+                }
+            }
+
+            if (videos.isEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Button(onClick = { viewModel.goBack() }) {
+                            Text("No videos found")
+                        }
+                    }
+                }
+            } else {
+                items(videos) { video ->
+                    VideoCard(video, creator, viewModel)
+                }
             }
         }
+
+        SettingsOverlay(
+            isVisible = showSettings,
+            onDismiss = { showSettings = false },
+            viewModel = viewModel
+        )
     }
 }
 

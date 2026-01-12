@@ -23,6 +23,9 @@ struct ContentView: View {
             } else if let playbackScreen = viewModel.currentScreen as? Screen.VideoPlayback {
                 VideoPlaybackView(url: playbackScreen.url, cookieName: playbackScreen.cookieName, cookieValue: playbackScreen.cookieValue, origin: playbackScreen.origin, viewModel: viewModel)
                     .onExitCommand(perform: viewModel.goBack)
+            } else if let loggedOutScreen = viewModel.currentScreen as? Screen.LoggedOut {
+                LoggedOutView(service: loggedOutScreen.service, viewModel: viewModel)
+                    .onExitCommand(perform: viewModel.goBack)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

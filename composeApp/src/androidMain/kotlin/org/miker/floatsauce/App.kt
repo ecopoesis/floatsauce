@@ -48,7 +48,8 @@ fun App() {
                     is Screen.AuthFailed -> AuthFailedScreen(screen.service, viewModel)
                     is Screen.Subscriptions -> SubscriptionsScreen(screen.service, viewModel)
                     is Screen.CreatorDetail -> CreatorDetailScreen(screen.creator, viewModel)
-                    is Screen.VideoPlayback -> VideoPlaybackScreen(screen.video, screen.url, screen.cookieName, screen.cookieValue, screen.origin, viewModel)
+                    is Screen.VideoPlayback -> VideoPlaybackScreen(screen.video, screen.creatorName, screen.url, screen.cookieName, screen.cookieValue, screen.origin, viewModel)
+                    is Screen.LoggedOut -> LoggedOutScreen(screen.service, viewModel)
                 }
             }
         }

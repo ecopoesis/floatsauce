@@ -293,4 +293,8 @@ class FloatsauceRepositoryImpl(
         val cookieValue = secureStorage.get("cookie_${service.name}") ?: return null
         return cookieName to cookieValue
     }
+
+    override suspend fun logout(service: AuthService) {
+        secureStorage.set("cookie_${service.name}", null)
+    }
 }

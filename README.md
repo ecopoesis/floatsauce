@@ -6,9 +6,8 @@ This is a Kotlin Multiplatform project targeting AndroidTV and tvOS for view Flo
 | Global features                  | tvOS | Android |
 |:---------------------------------|:----:|:-------:|
 | Single Service Mode              |  ❌   |    ❌    |
-| Config Menu on Service Selection |  ❌   |    ❌    |
-| Config Menu on Subscription      |  ❌   |    ❌    |
-| Config Menu on Creator           |  ❌   |    ❌    |
+| Config Menu on Subscription      |  ✅   |    ✅    |
+| Config Menu on Creator           |  ✅   |    ✅    |
 | Preferred Resolution             |  ❌   |    ❌    |
 | Icon                             |  ✅   |    ❌    |
 | Top Image                        |  ❌   |    ❌    |
@@ -30,12 +29,13 @@ This is a Kotlin Multiplatform project targeting AndroidTV and tvOS for view Flo
 | Video Comments                |        ❌        |      ❌      |         ❌          |       ❌        |  
 | Default to Correct Resolution |        ✅        |      ✅      |         ✅          |       ✅        |  
 | Channels UI on Creator Screen |        ✅        |      ✅      |         ✅          |       ✅        | 
-| Logout                        |        ❌        |      ❌      |         ❌          |       ❌        | 
+| Logout                        |        ✅        |      ✅      |         ✅          |       ✅        | 
 | Related videos                |        ❌        |      ❌      |         ❌          |       ❌        | 
 | Video completion              |        ✅        |      ✅      |         ✅          |       ✅        | 
 | Comments                      |        ❌        |      ❌      |         ❌          |       ❌        | 
 | Like/dislike from play screen |        ❌        |      ❌      |         ❌          |       ❌        | 
 | Longpress for more video info |        ❌        |      ❌      |         ❌          |       ❌        | 
+| Choose video resolution       |        ❌        |      ❌      |         ❌          |       ❌        | 
 
 
 ### Structure

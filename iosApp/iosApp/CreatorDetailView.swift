@@ -4,6 +4,7 @@ import SwiftUI
 struct CreatorDetailView: View {
     let creator: Creator
     @ObservedObject var viewModel: SwiftFloatsauceViewModel
+    @State private var showSettings = false
     
     private var currentCreator: Creator {
         viewModel.subscriptions.first(where: { $0.id == creator.id }) ?? creator
@@ -16,78 +17,92 @@ struct CreatorDetailView: View {
     ]
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                // Banner
-                if let bannerUrl = currentCreator.bannerUrl, let url = URL(string: bannerUrl) {
-                    AsyncImage(url: url) { image in
-                        image.resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Color.gray
+        ZStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Banner
+                    ZStack(alignment: .topTrailing) {
+                        if let bannerUrl = currentCreator.bannerUrl, let url = URL(string: bannerUrl) {
+                            AsyncImage(url: url) { image in
+                                image.resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                Color.gray
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 400) // Top third roughly
+                            .clipped()
+                        } else {
+                            Color.black.frame(height: 200)
+                        }
+                        
+                        HStack {
+                            Spacer()
+                            SettingsButton(action: { showSettings = true })
+                                .padding(40)
+                        }
+                        .focusSection()
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 400) // Top third roughly
-                    .clipped()
-                } else {
-                    Color.black.frame(height: 200)
-                }
-                
-                VStack(alignment: .leading, spacing: 40) {
-                    Text(currentCreator.name)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 60)
-                        .padding(.top, 40)
                     
-                    if let channels = currentCreator.channels, channels.count > 1 {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 30) {
-                                ChannelButton(title: "All", iconUrl: currentCreator.iconUrl, isSelected: viewModel.selectedChannel == nil) {
-                                    viewModel.selectChannel(creator: currentCreator, channel: nil)
-                                }
-                                
-                                ForEach(channels, id: \.id) { channel in
-                                    ChannelButton(title: channel.title, iconUrl: channel.iconUrl, isSelected: viewModel.selectedChannel?.id == channel.id) {
-                                        viewModel.selectChannel(creator: currentCreator, channel: channel)
+                    VStack(alignment: .leading, spacing: 40) {
+                        Text(currentCreator.name)
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 60)
+                            .padding(.top, 40)
+                        
+                        if let channels = currentCreator.channels, channels.count > 1 {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 30) {
+                                    ChannelButton(title: "All", iconUrl: currentCreator.iconUrl, isSelected: viewModel.selectedChannel == nil) {
+                                        viewModel.selectChannel(creator: currentCreator, channel: nil)
                                     }
+                                    
+                                    ForEach(channels, id: \.id) { channel in
+                                        ChannelButton(title: channel.title, iconUrl: channel.iconUrl, isSelected: viewModel.selectedChannel?.id == channel.id) {
+                                            viewModel.selectChannel(creator: currentCreator, channel: channel)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 60)
+                                .padding(.vertical, 10)
+                            }
+                        }
+
+                        if viewModel.videos.isEmpty {
+                            HStack {
+                                Spacer()
+                                Button("No videos found") {
+                                    viewModel.goBack()
+                                }
+                                Spacer()
+                            }
+                            .padding(.top, 100)
+                        } else {
+                            LazyVGrid(columns: columns, spacing: 60) {
+                                ForEach(viewModel.videos, id: \.id) { video in
+                                    VideoCard(video: video, creator: currentCreator, viewModel: viewModel)
+                                        .onAppear {
+                                            if video.id == viewModel.videos.last?.id {
+                                                viewModel.loadMoreVideos(creator: currentCreator)
+                                            }
+                                        }
                                 }
                             }
                             .padding(.horizontal, 60)
-                            .padding(.vertical, 10)
+                            .padding(.bottom, 60)
                         }
-                    }
-
-                    if viewModel.videos.isEmpty {
-                        HStack {
-                            Spacer()
-                            Button("No videos found") {
-                                viewModel.goBack()
-                            }
-                            Spacer()
-                        }
-                        .padding(.top, 100)
-                    } else {
-                        LazyVGrid(columns: columns, spacing: 60) {
-                            ForEach(viewModel.videos, id: \.id) { video in
-                                VideoCard(video: video, creator: currentCreator, viewModel: viewModel)
-                                    .onAppear {
-                                        if video.id == viewModel.videos.last?.id {
-                                            viewModel.loadMoreVideos(creator: currentCreator)
-                                        }
-                                    }
-                            }
-                        }
-                        .padding(.horizontal, 60)
-                        .padding(.bottom, 60)
                     }
                 }
             }
-        }
-        .edgesIgnoringSafeArea(.all)
-        .onAppear {
-            viewModel.fetchCreatorDetails(creator: creator)
+            .disabled(showSettings)
+            .edgesIgnoringSafeArea(.all)
+            .onAppear {
+                viewModel.fetchCreatorDetails(creator: creator)
+            }
+            
+            SettingsOverlay(isPresented: $showSettings, viewModel: viewModel)
         }
     }
 }
@@ -101,7 +116,6 @@ struct ChannelButton: View {
     @FocusState private var isFocused: Bool
     
     private let highlightColor = Color(red: 115.0/255.0, green: 55.0/255.0, blue: 181.0/255.0)
-    private let focusedScale: CGFloat = 1.1
 
     var body: some View {
         Button(action: action) {
@@ -115,7 +129,6 @@ struct ChannelButton: View {
                     }
                     .frame(width: 40, height: 40)
                     .clipShape(Circle())
-
                 } else {
                     Circle().fill(Color.gray)
                         .frame(width: 40, height: 40)
@@ -123,24 +136,15 @@ struct ChannelButton: View {
 
                 Text(title)
                     .font(.headline)
-                    .foregroundColor(.white)
             }
             .padding(.leading, 10)
             .padding(.trailing, 24)
             .padding(.vertical, 10)
-            .background(
-                isSelected ? Color.white.opacity(0.3) : Color.black.opacity(0.3)
-            )
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(isFocused ? highlightColor : Color.white, lineWidth: isFocused ? 4 : 1)
-            )
-        }
-        .buttonStyle(.borderless)
+         }
         .focused($isFocused)
-        .scaleEffect(isFocused ? focusedScale : 1.0)
-        .animation(.easeInOut(duration: 0.2), value: isFocused)
+        .glassEffect(
+            isSelected ? .regular.tint(highlightColor) : .regular
+        )
     }
 }
 

@@ -19,7 +19,8 @@ sealed class Screen {
     data class AuthFailed(val service: AuthService) : Screen()
     data class Subscriptions(val service: AuthService) : Screen()
     data class CreatorDetail(val creator: Creator) : Screen()
-    data class VideoPlayback(val video: Video, val url: String, val cookieName: String, val cookieValue: String, val origin: String) : Screen()
+    data class VideoPlayback(val video: Video, val creatorName: String, val url: String, val cookieName: String, val cookieValue: String, val origin: String) : Screen()
+    data class LoggedOut(val service: AuthService) : Screen()
 }
 
 class FloatsauceViewModel(
@@ -182,6 +183,7 @@ class FloatsauceViewModel(
                 Logger.d { "playVideo: navigating to VideoPlayback with url=$url, cookieName=${cookie?.first}, origin=${creator.service.origin}" }
                 navigateTo(Screen.VideoPlayback(
                     video = video,
+                    creatorName = creator.name,
                     url = url,
                     cookieName = cookie?.first ?: "",
                     cookieValue = cookie?.second ?: "",
@@ -201,6 +203,25 @@ class FloatsauceViewModel(
                 _subscriptions.value = _subscriptions.value.map {
                     if (it.id == creator.id) details else it
                 }
+            }
+        }
+    }
+
+    fun logout(service: AuthService) {
+        viewModelScope.launch {
+            repository.logout(service)
+            val current = _currentScreen.value
+            val shouldNavigateToLoggedOut = when (current) {
+                is Screen.Subscriptions -> current.service == service
+                is Screen.CreatorDetail -> current.creator.service == service
+                else -> false
+            }
+
+            if (shouldNavigateToLoggedOut) {
+                // Clear stack and go to LoggedOut
+                screenStack.clear()
+                screenStack.add(Screen.ServiceSelection)
+                _currentScreen.value = Screen.LoggedOut(service)
             }
         }
     }
