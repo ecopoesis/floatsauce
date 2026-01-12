@@ -56,6 +56,7 @@ struct SubscriptionsView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         } else {
+            let showHeaders = !viewModel.subscriptions.isEmpty && !browseCreators.isEmpty
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     if !bannerName.isEmpty {
@@ -66,10 +67,12 @@ struct SubscriptionsView: View {
                     }
                     
                     if !viewModel.subscriptions.isEmpty {
-                        Text("Your subscriptions")
-                            .font(.headline)
-                            .padding(.horizontal, 60)
-                            .padding(.top, 40)
+                        if showHeaders {
+                            Text("Your subscriptions")
+                                .font(.headline)
+                                .padding(.horizontal, 60)
+                                .padding(.top, 40)
+                        }
                         
                         LazyVGrid(columns: columns, spacing: 60) {
                             ForEach(viewModel.subscriptions, id: \.id) { creator in
@@ -79,14 +82,16 @@ struct SubscriptionsView: View {
                             }
                         }
                         .padding(.horizontal, 60)
-                        .padding(.top, 20)
+                        .padding(.top, showHeaders ? 20 : 40)
                     }
                     
                     if !browseCreators.isEmpty {
-                        Text("Browse creators")
-                            .font(.headline)
-                            .padding(.horizontal, 60)
-                            .padding(.top, 40)
+                        if showHeaders {
+                            Text("Browse creators")
+                                .font(.headline)
+                                .padding(.horizontal, 60)
+                                .padding(.top, 40)
+                        }
                         
                         LazyVGrid(columns: columns, spacing: 60) {
                             ForEach(browseCreators, id: \.id) { creator in
@@ -96,7 +101,7 @@ struct SubscriptionsView: View {
                             }
                         }
                         .padding(.horizontal, 60)
-                        .padding(.top, 20)
+                        .padding(.top, showHeaders ? 20 : 40)
                     }
                 }
                 .padding(.bottom, 60)

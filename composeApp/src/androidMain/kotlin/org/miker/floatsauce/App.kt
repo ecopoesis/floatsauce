@@ -200,6 +200,7 @@ fun SubscriptionsScreen(service: AuthService, viewModel: FloatsauceViewModel) {
                 }
             }
         } else {
+            val showHeaders = subscriptions.isNotEmpty() && browseCreators.isNotEmpty()
             LazyVerticalGrid(
                 columns = GridCells.Fixed(5),
                 contentPadding = PaddingValues(16.dp),
@@ -208,12 +209,14 @@ fun SubscriptionsScreen(service: AuthService, viewModel: FloatsauceViewModel) {
                 modifier = Modifier.fillMaxSize()
             ) {
                 if (subscriptions.isNotEmpty()) {
-                    item(span = { GridItemSpan(5) }) {
-                        Text(
-                            text = "Your subscriptions",
-                            style = MaterialTheme.typography.headlineSmall,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
+                    if (showHeaders) {
+                        item(span = { GridItemSpan(5) }) {
+                            Text(
+                                text = "Your subscriptions",
+                                style = MaterialTheme.typography.headlineSmall,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
                     }
                     items(subscriptions) { creator ->
                         CreatorCard(creator, viewModel) {
@@ -223,12 +226,14 @@ fun SubscriptionsScreen(service: AuthService, viewModel: FloatsauceViewModel) {
                 }
 
                 if (browseCreators.isNotEmpty()) {
-                    item(span = { GridItemSpan(5) }) {
-                        Text(
-                            text = "Browse creators",
-                            style = MaterialTheme.typography.headlineSmall,
-                            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
-                        )
+                    if (showHeaders) {
+                        item(span = { GridItemSpan(5) }) {
+                            Text(
+                                text = "Browse creators",
+                                style = MaterialTheme.typography.headlineSmall,
+                                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
+                            )
+                        }
                     }
                     items(browseCreators) { creator ->
                         CreatorCard(creator, viewModel) {

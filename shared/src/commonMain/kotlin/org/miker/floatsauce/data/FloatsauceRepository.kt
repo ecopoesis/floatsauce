@@ -42,11 +42,10 @@ class MockFloatsauceRepository : FloatsauceRepository {
     }
 
     override suspend fun getCreators(service: AuthService): List<Creator> {
-        return if (service == AuthService.FLOATPLANE) {
+        return if (service == AuthService.SAUCE_PLUS) {
             listOf(
-                Creator("linustech", "Linus Tech Tips", "https://cdn.floatplane.com/avatars/ltt.png", null, 5, service),
-                Creator("louisrossmann", "Louis Rossmann", "https://cdn.floatplane.com/avatars/rossmann.png", null, 1, service),
-                Creator("bitwit", "Bitwit", "https://cdn.floatplane.com/avatars/bitwit.png", null, 1, service)
+                Creator("sauce1", "Sauce Creator 1", null, null, 1, service),
+                Creator("sauce2", "Sauce Creator 2", null, null, 1, service)
             )
         } else {
             emptyList()

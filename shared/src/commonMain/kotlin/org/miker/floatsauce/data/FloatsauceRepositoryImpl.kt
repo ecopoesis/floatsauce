@@ -124,6 +124,7 @@ class FloatsauceRepositoryImpl(
     }
 
     override suspend fun getCreators(service: AuthService): List<Creator> {
+        if (service == AuthService.FLOATPLANE) return emptyList()
         val creatorApi = createCreatorApi(service)
         return try {
             val response = creatorApi.getCreators(search = "")
