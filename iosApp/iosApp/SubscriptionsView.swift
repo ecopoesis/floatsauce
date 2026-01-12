@@ -25,6 +25,7 @@ struct SubscriptionsView: View {
         GridItem(.flexible()),
         GridItem(.flexible()),
         GridItem(.flexible()),
+        GridItem(.flexible()),
         GridItem(.flexible())
     ]
     
@@ -125,13 +126,13 @@ struct CreatorCard: View {
                     Circle().fill(Color.gray)
                 }
                 .aspectRatio(contentMode: .fill)
-                .frame(width: 400, height: 400)
+                .frame(width: 300, height: 300)
                 .clipShape(Circle())
                 .hoverEffect(.highlight)
             } else {
                 Circle()
                     .fill(Color.gray)
-                    .frame(width: 400, height: 400)
+                    .frame(width: 300, height: 300)
             }
             Text(creator.name)
                 .scaleEffect(isFocused ? 1.1 : 1.0)

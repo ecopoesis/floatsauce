@@ -203,9 +203,9 @@ fun SubscriptionsScreen(service: AuthService, viewModel: FloatsauceViewModel) {
             val showHeaders = subscriptions.isNotEmpty() && browseCreators.isNotEmpty()
             LazyVerticalGrid(
                 columns = GridCells.Fixed(5),
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(32.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
+                verticalArrangement = Arrangement.spacedBy(32.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
                 if (subscriptions.isNotEmpty()) {
@@ -251,48 +251,35 @@ fun CreatorCard(creator: Creator, viewModel: FloatsauceViewModel, onClick: () ->
     LaunchedEffect(creator.id) {
         viewModel.fetchCreatorDetails(creator)
     }
-    Surface(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(8.dp),
-        color = Color(0xFF1E1E1E)
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AsyncImage(
-                model = creator.iconUrl,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(60.dp)
-                    .clip(CircleShape)
-                    .background(Color.DarkGray),
-                contentScale = ContentScale.Crop
-            )
+        AsyncImage(
+            model = creator.iconUrl,
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+                .clip(CircleShape)
+                .background(Color.DarkGray),
+            contentScale = ContentScale.Crop
+        )
 
-            Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-            Column {
-                val channels = creator.channels
-                Text(
-                    text = creator.name,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp
-                    ),
-                    maxLines = 1
-                )
-                if (channels != null && channels > 1) {
-                    Text(
-                        text = "$channels Channels",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
-                }
-            }
-        }
+        Text(
+            text = creator.name,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontWeight = FontWeight.Bold
+            ),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 

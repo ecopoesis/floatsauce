@@ -10,13 +10,14 @@ This is a Kotlin Multiplatform project targeting AndroidTV and tvOS for view Flo
 | Config Menu on Subscription      |  ❌   |    ❌    |
 | Config Menu on Creator           |  ❌   |    ❌    |
 | Preferred Resolution             |  ❌   |    ❌    |
+| Icon                             |  ❌   |    ❌    |
 
 
 | Per service features          | Floatplane tvOS | Sauce+ tvOS | Floatplane Android | Sauce+ Android |
 |:------------------------------|:---------------:|:-----------:|:------------------:|:--------------:|
 | QR Code Authentication        |        ❌        |      ❌      |         ❌          |       ❌        |
 | Service Buttons               |        ❌        |      ❌      |         ❌          |       ❌        |
-| Subscriptions Grid            |        ✅        |      ✅      |         ❌          |       ❌        |
+| Subscriptions Grid            |        ✅        |      ✅      |         ✅          |       ✅        |
 | Service Banners               |        ✅        |      ✅      |         ✅          |       ✅        |
 | Creator Detail Views          |        ✅        |      ✅      |         ✅          |       ✅        |
 | HLS Video Playback            |        ✅        |      ✅      |         ✅          |       ✅        |
