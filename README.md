@@ -10,7 +10,9 @@ This is a Kotlin Multiplatform project targeting AndroidTV and tvOS for view Flo
 | Config Menu on Subscription      |  ❌   |    ❌    |
 | Config Menu on Creator           |  ❌   |    ❌    |
 | Preferred Resolution             |  ❌   |    ❌    |
-| Icon                             |  ❌   |    ❌    |
+| Icon                             |  ✅   |    ❌    |
+| Top Image                        |  ❌   |    ❌    |
+
 
 
 | Per service features          | Floatplane tvOS | Sauce+ tvOS | Floatplane Android | Sauce+ Android |
