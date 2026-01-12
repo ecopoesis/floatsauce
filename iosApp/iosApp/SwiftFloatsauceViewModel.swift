@@ -71,6 +71,10 @@ class SwiftFloatsauceViewModel: ObservableObject {
         viewModel.selectChannel(creator: creator, channel: channel)
     }
     
+    func loadMoreVideos(creator: Creator) {
+        viewModel.loadMoreVideos(creator: creator)
+    }
+    
     func playVideo(video: Video, creator: Creator) {
         viewModel.playVideo(video: video, creator: creator)
     }

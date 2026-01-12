@@ -46,6 +46,11 @@ class FloatsauceViewModel(
     private val _selectedChannel = MutableStateFlow<Channel?>(null)
     val selectedChannel: StateFlow<Channel?> = _selectedChannel.asStateFlow()
 
+    private var currentOffset = 0
+    private var canLoadMore = true
+    private var isLoadingMore = false
+    private val PAGE_SIZE = 20
+
     private val _authState = MutableStateFlow<AuthState?>(null)
     val authState: StateFlow<AuthState?> = _authState.asStateFlow()
 
@@ -110,35 +115,61 @@ class FloatsauceViewModel(
 
     fun selectCreator(creator: Creator) {
         _selectedChannel.value = null
+        currentOffset = 0
+        canLoadMore = true
+        _videos.value = emptyList()
         viewModelScope.launch {
-            val videos = repository.getVideos(creator.service, creator.id)
-            _videos.value = videos
+            loadPage(creator, null)
             navigateTo(Screen.CreatorDetail(creator))
-
-            if (videos.isNotEmpty()) {
-                val progressMap = repository.getVideosProgress(creator.service, videos.map { it.postId })
-                _videos.value = videos.map { video ->
-                    val rawProgress = progressMap[video.postId] ?: 0
-                    val progress = if (rawProgress >= 95) 100 else rawProgress
-                    video.copy(progress = progress)
-                }
-            }
         }
     }
 
     fun selectChannel(creator: Creator, channel: Channel?) {
         _selectedChannel.value = channel
+        currentOffset = 0
+        canLoadMore = true
+        _videos.value = emptyList()
         viewModelScope.launch {
-            val videos = repository.getVideos(creator.service, creator.id, channel?.id)
-            _videos.value = videos
-            if (videos.isNotEmpty()) {
-                val progressMap = repository.getVideosProgress(creator.service, videos.map { it.postId })
-                _videos.value = videos.map { video ->
+            loadPage(creator, channel)
+        }
+    }
+
+    fun loadMoreVideos(creator: Creator) {
+        if (!canLoadMore || isLoadingMore) return
+        viewModelScope.launch {
+            loadPage(creator, _selectedChannel.value)
+        }
+    }
+
+    private suspend fun loadPage(creator: Creator, channel: Channel?) {
+        isLoadingMore = true
+        try {
+            val newVideos = repository.getVideos(creator.service, creator.id, channel?.id, limit = PAGE_SIZE, fetchAfter = currentOffset)
+            if (newVideos.isEmpty()) {
+                canLoadMore = false
+            } else {
+                val progressMap = if (newVideos.isNotEmpty()) {
+                    repository.getVideosProgress(creator.service, newVideos.map { it.postId })
+                } else {
+                    emptyMap()
+                }
+
+                val updatedNewVideos = newVideos.map { video ->
                     val rawProgress = progressMap[video.postId] ?: 0
                     val progress = if (rawProgress >= 95) 100 else rawProgress
                     video.copy(progress = progress)
                 }
+
+                _videos.value = _videos.value + updatedNewVideos
+                currentOffset += newVideos.size
+                if (newVideos.size < PAGE_SIZE) {
+                    canLoadMore = false
+                }
             }
+        } catch (e: Exception) {
+            Logger.e(e) { "Error loading videos" }
+        } finally {
+            isLoadingMore = false
         }
     }
 

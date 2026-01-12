@@ -12,7 +12,7 @@ interface FloatsauceRepository {
     suspend fun getSubscriptions(service: AuthService): List<Creator>
     suspend fun getCreators(service: AuthService): List<Creator>
     suspend fun getCreatorDetails(service: AuthService, id: String): Creator?
-    suspend fun getVideos(service: AuthService, creatorId: String, channelId: String? = null): List<Video>
+    suspend fun getVideos(service: AuthService, creatorId: String, channelId: String? = null, limit: Int? = null, fetchAfter: Int? = null): List<Video>
     suspend fun getVideosProgress(service: AuthService, postIds: List<String>): Map<String, Int>
     suspend fun getVideoStreamUrl(service: AuthService, videoId: String): String?
     suspend fun requestDeviceAuth(service: AuthService)
@@ -58,7 +58,8 @@ class MockFloatsauceRepository : FloatsauceRepository {
         return null
     }
 
-    override suspend fun getVideos(service: AuthService, creatorId: String, channelId: String?): List<Video> {
+    override suspend fun getVideos(service: AuthService, creatorId: String, channelId: String?, limit: Int?, fetchAfter: Int?): List<Video> {
+        if ((fetchAfter ?: 0) > 0) return emptyList() // Mock only one page
         return listOf(
             Video("v1", "p1", "Mock Video 1 for $creatorId", null, "10:00", "2 days ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", 50),
             Video("v2", "p2", "Mock Video 2 for $creatorId", null, "15:30", "1 year ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", 96)

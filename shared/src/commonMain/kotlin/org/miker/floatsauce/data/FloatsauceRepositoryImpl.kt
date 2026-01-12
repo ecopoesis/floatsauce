@@ -164,10 +164,10 @@ class FloatsauceRepositoryImpl(
         }
     }
 
-    override suspend fun getVideos(service: AuthService, creatorId: String, channelId: String?): List<Video> {
+    override suspend fun getVideos(service: AuthService, creatorId: String, channelId: String?, limit: Int?, fetchAfter: Int?): List<Video> {
         val contentApi = createContentApi(service)
         return try {
-            val response = contentApi.getCreatorBlogPosts(id = creatorId, channel = channelId, hasVideo = true)
+            val response = contentApi.getCreatorBlogPosts(id = creatorId, channel = channelId, hasVideo = true, limit = limit, fetchAfter = fetchAfter)
             val posts = response.body()
             posts.mapNotNull { post ->
                 val videoId = post.videoAttachments?.firstOrNull() ?: return@mapNotNull null

@@ -12,15 +12,12 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +41,20 @@ fun CreatorDetailScreen(creator: Creator, viewModel: FloatsauceViewModel) {
     val currentCreator = subscriptions.find { it.id == creator.id } ?: creator
     val channels = currentCreator.channels
 
+    val gridState = rememberLazyGridState()
+    val shouldLoadMore = remember {
+        derivedStateOf {
+            val lastVisibleItemIndex = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+            lastVisibleItemIndex >= gridState.layoutInfo.totalItemsCount - 5
+        }
+    }
+
+    LaunchedEffect(shouldLoadMore.value) {
+        if (shouldLoadMore.value) {
+            viewModel.loadMoreVideos(creator)
+        }
+    }
+
     LaunchedEffect(creator.id) {
         viewModel.fetchCreatorDetails(creator)
     }
@@ -53,6 +64,7 @@ fun CreatorDetailScreen(creator: Creator, viewModel: FloatsauceViewModel) {
     }
 
     LazyVerticalGrid(
+        state = gridState,
         columns = GridCells.Fixed(3),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 32.dp)

@@ -72,6 +72,11 @@ struct CreatorDetailView: View {
                         LazyVGrid(columns: columns, spacing: 60) {
                             ForEach(viewModel.videos, id: \.id) { video in
                                 VideoCard(video: video, creator: currentCreator, viewModel: viewModel)
+                                    .onAppear {
+                                        if video.id == viewModel.videos.last?.id {
+                                            viewModel.loadMoreVideos(creator: currentCreator)
+                                        }
+                                    }
                             }
                         }
                         .padding(.horizontal, 60)
