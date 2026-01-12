@@ -107,8 +107,18 @@ class FloatsauceViewModel(
 
     fun selectCreator(creator: Creator) {
         viewModelScope.launch {
-            _videos.value = repository.getVideos(creator.service, creator.id)
+            val videos = repository.getVideos(creator.service, creator.id)
+            _videos.value = videos
             navigateTo(Screen.CreatorDetail(creator))
+
+            if (videos.isNotEmpty()) {
+                val progressMap = repository.getVideosProgress(creator.service, videos.map { it.postId })
+                _videos.value = videos.map { video ->
+                    val rawProgress = progressMap[video.postId] ?: 0
+                    val progress = if (rawProgress >= 95) 100 else rawProgress
+                    video.copy(progress = progress)
+                }
+            }
         }
     }
 

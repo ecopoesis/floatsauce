@@ -93,6 +93,22 @@ struct VideoCard: View {
                             .aspectRatio(16/9, contentMode: .fit)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
+
+                    if video.progress > 0 {
+                        ZStack(alignment: .bottomLeading) {
+                            Rectangle()
+                                .fill(Color.black.opacity(0.5))
+                                .frame(height: 8)
+                            Rectangle()
+                                .fill(Color.yellow)
+                                .frame(height: 8)
+                                .scaleEffect(x: CGFloat(video.progress) / 100.0, y: 1.0, anchor: .leading)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                        .aspectRatio(16/9, contentMode: .fit)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .allowsHitTesting(false)
+                    }
                     
                     // Duration label (Liquid Glass)
                     Text(video.duration)

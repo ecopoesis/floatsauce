@@ -109,6 +109,24 @@ fun VideoCard(video: Video, creator: Creator, viewModel: FloatsauceViewModel) {
                         .background(Color.DarkGray),
                     contentScale = ContentScale.Crop
                 )
+                if (video.progress > 0) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .fillMaxWidth()
+                            .padding(bottom = 0.dp)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp))
+                            .background(Color.Black.copy(alpha = 0.5f))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(video.progress / 100f)
+                                .background(Color.Yellow)
+                        )
+                    }
+                }
                 // Duration overlay (Liquid Glass simulated with alpha)
                 Surface(
                     modifier = Modifier

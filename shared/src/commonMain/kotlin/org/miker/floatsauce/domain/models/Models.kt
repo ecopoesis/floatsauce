@@ -21,9 +21,11 @@ data class Creator(
 
 data class Video(
     val id: String,
+    val postId: String,
     val title: String,
     val thumbnailUrl: String?,
     val duration: String,
     val releaseDate: String,
-    val videoUrl: String
+    val videoUrl: String,
+    val progress: Int = 0
 )

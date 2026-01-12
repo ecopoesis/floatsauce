@@ -12,6 +12,7 @@ interface FloatsauceRepository {
     suspend fun getCreators(service: AuthService): List<Creator>
     suspend fun getCreatorDetails(service: AuthService, id: String): Creator?
     suspend fun getVideos(service: AuthService, creatorId: String): List<Video>
+    suspend fun getVideosProgress(service: AuthService, postIds: List<String>): Map<String, Int>
     suspend fun getVideoStreamUrl(service: AuthService, videoId: String): String?
     suspend fun requestDeviceAuth(service: AuthService)
     suspend fun pollForToken(service: AuthService): String?
@@ -58,9 +59,13 @@ class MockFloatsauceRepository : FloatsauceRepository {
 
     override suspend fun getVideos(service: AuthService, creatorId: String): List<Video> {
         return listOf(
-            Video("v1", "Mock Video 1 for $creatorId", null, "10:00", "2 days ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"),
-            Video("v2", "Mock Video 2 for $creatorId", null, "15:30", "1 year ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8")
+            Video("v1", "p1", "Mock Video 1 for $creatorId", null, "10:00", "2 days ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", 50),
+            Video("v2", "p2", "Mock Video 2 for $creatorId", null, "15:30", "1 year ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", 96)
         )
+    }
+
+    override suspend fun getVideosProgress(service: AuthService, postIds: List<String>): Map<String, Int> {
+        return emptyMap()
     }
 
     override suspend fun getVideoStreamUrl(service: AuthService, videoId: String): String? {

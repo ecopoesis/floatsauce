@@ -14,6 +14,7 @@ import kotlinx.datetime.Instant
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.Severity
 import org.miker.floatsauce.api.*
+import org.miker.floatsauce.models.*
 import org.miker.floatsauce.domain.models.*
 import org.miker.floatsauce.getPlatform
 import org.openapitools.client.auth.ApiKeyAuth
@@ -172,6 +173,7 @@ class FloatsauceRepositoryImpl(
                 val videoId = post.videoAttachments?.firstOrNull() ?: return@mapNotNull null
                 Video(
                     id = videoId,
+                    postId = post.id,
                     title = post.title,
                     thumbnailUrl = post.thumbnail?.path,
                     duration = formatDuration(post.metadata.videoDuration),
@@ -181,6 +183,16 @@ class FloatsauceRepositoryImpl(
             }
         } catch (e: Exception) {
             emptyList()
+        }
+    }
+
+    override suspend fun getVideosProgress(service: AuthService, postIds: List<String>): Map<String, Int> {
+        val contentApi = createContentApi(service)
+        return try {
+            val response = contentApi.getProgress(GetProgressRequest(ids = postIds, contentType = GetProgressRequest.ContentType.BLOG_POST))
+            response.body().associate { it.id to it.progress }
+        } catch (e: Exception) {
+            emptyMap()
         }
     }
 
