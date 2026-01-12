@@ -137,7 +137,7 @@ class FloatsauceRepositoryImpl(
                     name = creator.title,
                     iconUrl = creator.icon.path,
                     bannerUrl = creator.cover?.path,
-                    channels = creator.channels.size,
+                    channels = creator.channels.map { Channel(it.id, it.title, it.icon.path) },
                     service = service
                 )
             }
@@ -156,7 +156,7 @@ class FloatsauceRepositoryImpl(
                 name = creatorModel.title,
                 iconUrl = creatorModel.icon.path,
                 bannerUrl = creatorModel.cover?.path,
-                channels = creatorModel.channels.size,
+                channels = creatorModel.channels.map { Channel(it.id, it.title, it.icon.path) },
                 service = service
             )
         } catch (e: Exception) {
@@ -164,10 +164,10 @@ class FloatsauceRepositoryImpl(
         }
     }
 
-    override suspend fun getVideos(service: AuthService, creatorId: String): List<Video> {
+    override suspend fun getVideos(service: AuthService, creatorId: String, channelId: String?): List<Video> {
         val contentApi = createContentApi(service)
         return try {
-            val response = contentApi.getCreatorBlogPosts(id = creatorId, hasVideo = true)
+            val response = contentApi.getCreatorBlogPosts(id = creatorId, channel = channelId, hasVideo = true)
             val posts = response.body()
             posts.mapNotNull { post ->
                 val videoId = post.videoAttachments?.firstOrNull() ?: return@mapNotNull null

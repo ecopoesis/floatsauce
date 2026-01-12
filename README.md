@@ -29,7 +29,7 @@ This is a Kotlin Multiplatform project targeting AndroidTV and tvOS for view Flo
 | Post Counts                   |        ❌        |      ❌      |         ❌          |       ❌        |  
 | Video Comments                |        ❌        |      ❌      |         ❌          |       ❌        |  
 | Default to Correct Resolution |        ✅        |      ✅      |         ✅          |       ✅        |  
-| Channels UI on Creator Screen |        ❌        |      ❌      |         ❌          |       ❌        | 
+| Channels UI on Creator Screen |        ✅        |      ✅      |         ✅          |       ✅        | 
 | Logout                        |        ❌        |      ❌      |         ❌          |       ❌        | 
 | Video completion              |        ❌        |      ❌      |         ❌          |       ❌        | 
 | Related videos                |        ✅        |      ✅      |         ✅          |       ✅        | 

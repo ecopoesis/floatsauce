@@ -7,6 +7,7 @@ class SwiftFloatsauceViewModel: ObservableObject {
     @Published var subscriptions: [Creator] = []
     @Published var browseCreators: [Creator] = []
     @Published var videos: [Video] = []
+    @Published var selectedChannel: Channel? = nil
     @Published var authState: AuthState? = nil
     
     private let viewModel: FloatsauceViewModel
@@ -45,6 +46,12 @@ class SwiftFloatsauceViewModel: ObservableObject {
             }
         }
         
+        viewModel.watchSelectedChannel { [weak self] selectedChannel in
+            DispatchQueue.main.async {
+                self?.selectedChannel = selectedChannel
+            }
+        }
+        
         viewModel.watchAuthState { [weak self] authState in
             DispatchQueue.main.async {
                 self?.authState = authState
@@ -58,6 +65,10 @@ class SwiftFloatsauceViewModel: ObservableObject {
     
     func selectCreator(creator: Creator) {
         viewModel.selectCreator(creator: creator)
+    }
+    
+    func selectChannel(creator: Creator, channel: Channel?) {
+        viewModel.selectChannel(creator: creator, channel: channel)
     }
     
     func playVideo(video: Video, creator: Creator) {

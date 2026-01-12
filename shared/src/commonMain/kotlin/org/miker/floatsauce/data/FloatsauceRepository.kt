@@ -4,6 +4,7 @@ import org.miker.floatsauce.domain.models.AuthService
 import org.miker.floatsauce.domain.models.AuthState
 import org.miker.floatsauce.domain.models.Creator
 import org.miker.floatsauce.domain.models.Video
+import org.miker.floatsauce.domain.models.Channel
 
 interface FloatsauceRepository {
     fun getServices(): List<AuthService>
@@ -11,7 +12,7 @@ interface FloatsauceRepository {
     suspend fun getSubscriptions(service: AuthService): List<Creator>
     suspend fun getCreators(service: AuthService): List<Creator>
     suspend fun getCreatorDetails(service: AuthService, id: String): Creator?
-    suspend fun getVideos(service: AuthService, creatorId: String): List<Video>
+    suspend fun getVideos(service: AuthService, creatorId: String, channelId: String? = null): List<Video>
     suspend fun getVideosProgress(service: AuthService, postIds: List<String>): Map<String, Int>
     suspend fun getVideoStreamUrl(service: AuthService, videoId: String): String?
     suspend fun requestDeviceAuth(service: AuthService)
@@ -34,8 +35,8 @@ class MockFloatsauceRepository : FloatsauceRepository {
     override suspend fun getSubscriptions(service: AuthService): List<Creator> {
         return if (service == AuthService.FLOATPLANE) {
             listOf(
-                Creator("linustech", "Linus Tech Tips", "https://cdn.floatplane.com/avatars/ltt.png", null, 5, service),
-                Creator("louisrossmann", "Louis Rossmann", "https://cdn.floatplane.com/avatars/rossmann.png", null, 1, service)
+                Creator("linustech", "Linus Tech Tips", "https://cdn.floatplane.com/avatars/ltt.png", null, listOf(Channel("c1", "LTT", null), Channel("c2", "TechQuickie", null)), service),
+                Creator("louisrossmann", "Louis Rossmann", "https://cdn.floatplane.com/avatars/rossmann.png", null, listOf(Channel("c3", "Rossmann", null)), service)
             )
         } else {
             emptyList()
@@ -45,8 +46,8 @@ class MockFloatsauceRepository : FloatsauceRepository {
     override suspend fun getCreators(service: AuthService): List<Creator> {
         return if (service == AuthService.SAUCE_PLUS) {
             listOf(
-                Creator("sauce1", "Sauce Creator 1", null, null, 1, service),
-                Creator("sauce2", "Sauce Creator 2", null, null, 1, service)
+                Creator("sauce1", "Sauce Creator 1", null, null, listOf(Channel("s1", "Sauce Channel", null)), service),
+                Creator("sauce2", "Sauce Creator 2", null, null, listOf(Channel("s2", "Another Sauce", null)), service)
             )
         } else {
             emptyList()
@@ -57,7 +58,7 @@ class MockFloatsauceRepository : FloatsauceRepository {
         return null
     }
 
-    override suspend fun getVideos(service: AuthService, creatorId: String): List<Video> {
+    override suspend fun getVideos(service: AuthService, creatorId: String, channelId: String?): List<Video> {
         return listOf(
             Video("v1", "p1", "Mock Video 1 for $creatorId", null, "10:00", "2 days ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", 50),
             Video("v2", "p2", "Mock Video 2 for $creatorId", null, "15:30", "1 year ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", 96)

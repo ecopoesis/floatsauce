@@ -43,6 +43,9 @@ class FloatsauceViewModel(
     private val _videos = MutableStateFlow<List<Video>>(emptyList())
     val videos: StateFlow<List<Video>> = _videos.asStateFlow()
 
+    private val _selectedChannel = MutableStateFlow<Channel?>(null)
+    val selectedChannel: StateFlow<Channel?> = _selectedChannel.asStateFlow()
+
     private val _authState = MutableStateFlow<AuthState?>(null)
     val authState: StateFlow<AuthState?> = _authState.asStateFlow()
 
@@ -106,11 +109,28 @@ class FloatsauceViewModel(
     }
 
     fun selectCreator(creator: Creator) {
+        _selectedChannel.value = null
         viewModelScope.launch {
             val videos = repository.getVideos(creator.service, creator.id)
             _videos.value = videos
             navigateTo(Screen.CreatorDetail(creator))
 
+            if (videos.isNotEmpty()) {
+                val progressMap = repository.getVideosProgress(creator.service, videos.map { it.postId })
+                _videos.value = videos.map { video ->
+                    val rawProgress = progressMap[video.postId] ?: 0
+                    val progress = if (rawProgress >= 95) 100 else rawProgress
+                    video.copy(progress = progress)
+                }
+            }
+        }
+    }
+
+    fun selectChannel(creator: Creator, channel: Channel?) {
+        _selectedChannel.value = channel
+        viewModelScope.launch {
+            val videos = repository.getVideos(creator.service, creator.id, channel?.id)
+            _videos.value = videos
             if (videos.isNotEmpty()) {
                 val progressMap = repository.getVideosProgress(creator.service, videos.map { it.postId })
                 _videos.value = videos.map { video ->
@@ -174,5 +194,6 @@ class FloatsauceViewModel(
     fun watchSubscriptions(onEach: (List<Creator>) -> Unit) = subscriptions.onEach { onEach(it) }.launchIn(viewModelScope)
     fun watchBrowseCreators(onEach: (List<Creator>) -> Unit) = browseCreators.onEach { onEach(it) }.launchIn(viewModelScope)
     fun watchVideos(onEach: (List<Video>) -> Unit) = videos.onEach { onEach(it) }.launchIn(viewModelScope)
+    fun watchSelectedChannel(onEach: (Channel?) -> Unit) = selectedChannel.onEach { onEach(it) }.launchIn(viewModelScope)
     fun watchAuthState(onEach: (AuthState?) -> Unit) = authState.onEach { onEach(it) }.launchIn(viewModelScope)
 }

@@ -15,8 +15,14 @@ data class Creator(
     val name: String,
     val iconUrl: String?,
     val bannerUrl: String?,
-    val channels: Int?,
+    val channels: List<Channel>?,
     val service: AuthService
+)
+
+data class Channel(
+    val id: String,
+    val title: String,
+    val iconUrl: String?
 )
 
 data class Video(

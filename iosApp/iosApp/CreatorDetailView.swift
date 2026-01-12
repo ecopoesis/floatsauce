@@ -41,6 +41,24 @@ struct CreatorDetailView: View {
                         .padding(.horizontal, 60)
                         .padding(.top, 40)
                     
+                    if let channels = currentCreator.channels, channels.count > 1 {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 30) {
+                                ChannelButton(title: "All", iconUrl: currentCreator.iconUrl, isSelected: viewModel.selectedChannel == nil) {
+                                    viewModel.selectChannel(creator: currentCreator, channel: nil)
+                                }
+                                
+                                ForEach(channels, id: \.id) { channel in
+                                    ChannelButton(title: channel.title, iconUrl: channel.iconUrl, isSelected: viewModel.selectedChannel?.id == channel.id) {
+                                        viewModel.selectChannel(creator: currentCreator, channel: channel)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 60)
+                            .padding(.vertical, 10)
+                        }
+                    }
+
                     if viewModel.videos.isEmpty {
                         HStack {
                             Spacer()
@@ -63,6 +81,61 @@ struct CreatorDetailView: View {
             }
         }
         .edgesIgnoringSafeArea(.all)
+        .onAppear {
+            viewModel.fetchCreatorDetails(creator: creator)
+        }
+    }
+}
+
+struct ChannelButton: View {
+    let title: String
+    let iconUrl: String?
+    let isSelected: Bool
+    let action: () -> Void
+    
+    @FocusState private var isFocused: Bool
+    
+    private let highlightColor = Color(red: 115.0/255.0, green: 55.0/255.0, blue: 181.0/255.0)
+    private let focusedScale: CGFloat = 1.1
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                if let iconUrl = iconUrl, let url = URL(string: iconUrl) {
+                    AsyncImage(url: url) { image in
+                        image.resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Circle().fill(Color.gray)
+                    }
+                    .frame(width: 40, height: 40)
+                    .clipShape(Circle())
+
+                } else {
+                    Circle().fill(Color.gray)
+                        .frame(width: 40, height: 40)
+                }
+
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(.white)
+            }
+            .padding(.leading, 10)
+            .padding(.trailing, 24)
+            .padding(.vertical, 10)
+            .background(
+                isSelected ? Color.white.opacity(0.3) : Color.black.opacity(0.3)
+            )
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(isFocused ? highlightColor : Color.white, lineWidth: isFocused ? 4 : 1)
+            )
+        }
+        .buttonStyle(.borderless)
+        .focused($isFocused)
+        .scaleEffect(isFocused ? focusedScale : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isFocused)
     }
 }
 
