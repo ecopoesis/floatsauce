@@ -41,13 +41,24 @@ struct CreatorDetailView: View {
                         .padding(.horizontal, 60)
                         .padding(.top, 40)
                     
-                    LazyVGrid(columns: columns, spacing: 60) {
-                        ForEach(viewModel.videos, id: \.id) { video in
-                            VideoCard(video: video, creator: currentCreator, viewModel: viewModel)
+                    if viewModel.videos.isEmpty {
+                        HStack {
+                            Spacer()
+                            Button("No videos found") {
+                                viewModel.goBack()
+                            }
+                            Spacer()
                         }
+                        .padding(.top, 100)
+                    } else {
+                        LazyVGrid(columns: columns, spacing: 60) {
+                            ForEach(viewModel.videos, id: \.id) { video in
+                                VideoCard(video: video, creator: currentCreator, viewModel: viewModel)
+                            }
+                        }
+                        .padding(.horizontal, 60)
+                        .padding(.bottom, 60)
                     }
-                    .padding(.horizontal, 60)
-                    .padding(.bottom, 60)
                 }
             }
         }

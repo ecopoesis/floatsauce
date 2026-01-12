@@ -328,8 +328,23 @@ fun CreatorDetailScreen(creator: Creator, viewModel: FloatsauceViewModel) {
             )
         }
 
-        items(videos) { video ->
-            VideoCard(video, creator, viewModel)
+        if (videos.isEmpty()) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 100.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Button(onClick = { viewModel.goBack() }) {
+                        Text("No videos found")
+                    }
+                }
+            }
+        } else {
+            items(videos) { video ->
+                VideoCard(video, creator, viewModel)
+            }
         }
     }
 }
