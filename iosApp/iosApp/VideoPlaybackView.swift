@@ -10,11 +10,27 @@ struct VideoPlaybackView: View {
     let cookieName: String
     let cookieValue: String
     let origin: String
+    let thumbnailUrl: String?
+    let thumbnailWidth: Int32
+    let thumbnailHeight: Int32
+    let thumbnailFrameCount: Int32
     @ObservedObject var viewModel: SwiftFloatsauceViewModel
 
     var body: some View {
         if let videoUrl = URL(string: url) {
-            VideoPlayerView(video: video, url: videoUrl, resumeProgressSeconds: resumeProgressSeconds, cookieName: cookieName, cookieValue: cookieValue, origin: origin, viewModel: viewModel)
+            VideoPlayerView(
+                video: video,
+                url: videoUrl,
+                resumeProgressSeconds: resumeProgressSeconds,
+                cookieName: cookieName,
+                cookieValue: cookieValue,
+                origin: origin,
+                thumbnailUrl: thumbnailUrl,
+                thumbnailWidth: thumbnailWidth,
+                thumbnailHeight: thumbnailHeight,
+                thumbnailFrameCount: thumbnailFrameCount,
+                viewModel: viewModel
+            )
                 .edgesIgnoringSafeArea(.all)
         } else {
             Text("Invalid Video URL")
@@ -183,6 +199,10 @@ struct VideoPlayerView: UIViewControllerRepresentable {
     let cookieName: String
     let cookieValue: String
     let origin: String
+    let thumbnailUrl: String?
+    let thumbnailWidth: Int32
+    let thumbnailHeight: Int32
+    let thumbnailFrameCount: Int32
     let viewModel: SwiftFloatsauceViewModel
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
@@ -212,6 +232,26 @@ struct VideoPlayerView: UIViewControllerRepresentable {
         let controller = AVPlayerViewController()
         controller.player = player
         player.play()
+
+        let overlay = UIHostingController(rootView: ThumbnailOverlay(
+            thumbnailUrl: thumbnailUrl,
+            thumbnailWidth: thumbnailWidth,
+            thumbnailHeight: thumbnailHeight,
+            thumbnailFrameCount: thumbnailFrameCount,
+            coordinator: context.coordinator
+        ))
+        overlay.view.backgroundColor = .clear
+        if let contentOverlay = controller.contentOverlayView {
+            contentOverlay.addSubview(overlay.view)
+            overlay.view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                overlay.view.topAnchor.constraint(equalTo: contentOverlay.topAnchor),
+                overlay.view.leadingAnchor.constraint(equalTo: contentOverlay.leadingAnchor),
+                overlay.view.trailingAnchor.constraint(equalTo: contentOverlay.trailingAnchor),
+                overlay.view.bottomAnchor.constraint(equalTo: contentOverlay.bottomAnchor)
+            ])
+        }
+
         return controller
     }
 
@@ -221,7 +261,7 @@ struct VideoPlayerView: UIViewControllerRepresentable {
         Coordinator()
     }
 
-    class Coordinator: NSObject {
+    class Coordinator: NSObject, ObservableObject {
         var delegate: ResourceLoaderDelegate?
         var player: AVPlayer?
         var video: Video?
@@ -230,19 +270,51 @@ struct VideoPlayerView: UIViewControllerRepresentable {
         var lastSentProgress: Int = -1
         var lastUpdateTime: Date = Date.distantPast
 
+        @Published var isScrubbing: Bool = false
+        @Published var scrubbingTime: Double = 0
+        @Published var duration: Double = 0
+        private var lastScrubTime: Date = Date.distantPast
+
+        private var durationObserver: NSKeyValueObservation?
+
         func setupObserver(player: AVPlayer, video: Video, viewModel: SwiftFloatsauceViewModel) {
             self.player = player
             self.video = video
             self.viewModel = viewModel
 
-            let interval = CMTime(seconds: 1, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+            let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
             timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
                 self?.handleTimeUpdate(time: time)
             }
 
             player.addObserver(self, forKeyPath: "timeControlStatus", options: [.old, .new], context: nil)
 
+            if let item = player.currentItem {
+                setupItemObservers(item: item)
+            }
+
             NotificationCenter.default.addObserver(self, selector: #selector(playerDidFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: player.currentItem)
+            NotificationCenter.default.addObserver(self, selector: #selector(timeJumped), name: .AVPlayerItemTimeJumped, object: player.currentItem)
+        }
+
+        func setupItemObservers(item: AVPlayerItem) {
+            durationObserver = item.observe(\.duration, options: [.new]) { [weak self] item, change in
+                DispatchQueue.main.async {
+                    if item.duration.isNumeric {
+                        self?.duration = item.duration.seconds
+                    }
+                }
+            }
+        }
+
+        @objc func timeJumped() {
+            DispatchQueue.main.async {
+                self.isScrubbing = true
+                self.lastScrubTime = Date()
+                if let time = self.player?.currentTime() {
+                    self.scrubbingTime = time.seconds
+                }
+            }
         }
 
         override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
@@ -265,7 +337,15 @@ struct VideoPlayerView: UIViewControllerRepresentable {
 
         func handleTimeUpdate(time: CMTime) {
             guard let player = player else { return }
+            if isScrubbing {
+                if Date().timeIntervalSince(lastScrubTime) > 2.0 {
+                    isScrubbing = false
+                } else {
+                    scrubbingTime = time.seconds
+                }
+            }
             if player.timeControlStatus == .playing {
+                isScrubbing = false
                 let now = Date()
                 if now.timeIntervalSince(lastUpdateTime) >= 10 {
                     sendProgressUpdate()
@@ -298,7 +378,60 @@ struct VideoPlayerView: UIViewControllerRepresentable {
                 player?.removeTimeObserver(observer)
             }
             player?.removeObserver(self, forKeyPath: "timeControlStatus")
+            durationObserver?.invalidate()
             NotificationCenter.default.removeObserver(self)
+        }
+    }
+}
+
+struct ThumbnailOverlay: View {
+    let thumbnailUrl: String?
+    let thumbnailWidth: Int32
+    let thumbnailHeight: Int32
+    let thumbnailFrameCount: Int32
+    @ObservedObject var coordinator: VideoPlayerView.Coordinator
+
+    var body: some View {
+        GeometryReader { geometry in
+            if coordinator.isScrubbing, let urlStr = thumbnailUrl, let url = URL(string: urlStr), thumbnailFrameCount > 0, coordinator.duration > 0 {
+                let progress = coordinator.scrubbingTime / coordinator.duration
+                let thumbHeight: CGFloat = 200
+                let thumbWidth = thumbHeight * (160.0 / 90.0)
+
+                let centerX = geometry.size.width * CGFloat(progress)
+                let xOffset = min(max(centerX - thumbWidth / 2, 0), geometry.size.width - thumbWidth)
+
+                let framesPerRow = Int(thumbnailWidth) / 160
+                if framesPerRow > 0 {
+                    let frameIndex = min(max(Int(Double(thumbnailFrameCount) * progress), 0), Int(thumbnailFrameCount) - 1)
+                    let column = frameIndex % framesPerRow
+                    let row = frameIndex / framesPerRow
+                    
+                    let scale = thumbHeight / 90.0
+                    let fullSpriteWidth = CGFloat(thumbnailWidth) * scale
+                    let fullSpriteHeight = CGFloat(thumbnailHeight) * scale
+
+                    VStack {
+                        Spacer()
+                        ZStack(alignment: .topLeading) {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image.resizable()
+                                        .frame(width: fullSpriteWidth, height: fullSpriteHeight)
+                                        .offset(x: -thumbWidth * CGFloat(column), y: -thumbHeight * CGFloat(row))
+                                default:
+                                    Color.black
+                                }
+                            }
+                        }
+                        .frame(width: thumbWidth, height: thumbHeight)
+                        .clipped()
+                        .offset(x: xOffset)
+                        .padding(.bottom, 150)
+                    }
+                }
+            }
         }
     }
 }
