@@ -91,7 +91,11 @@ class SwiftFloatsauceViewModel: ObservableObject {
     func playVideo(video: Video, creator: Creator) {
         viewModel.playVideo(video: video, creator: creator)
     }
-    
+
+    func updateVideoProgress(video: Video, progressSeconds: Int32) {
+        viewModel.updateVideoProgress(video: video, progressSeconds: progressSeconds)
+    }
+
     func fetchCreatorDetails(creator: Creator) {
         viewModel.fetchCreatorDetails(creator: creator)
     }

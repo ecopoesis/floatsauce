@@ -213,6 +213,12 @@ class FloatsauceViewModel(
         }
     }
 
+    fun updateVideoProgress(video: Video, progressSeconds: Int) {
+        viewModelScope.launch {
+            repository.updateVideoProgress(video.service, video.id, progressSeconds)
+        }
+    }
+
     fun fetchCreatorDetails(creator: Creator) {
         if (creator.channels != null) return
         viewModelScope.launch {

@@ -33,5 +33,6 @@ data class Video(
     val duration: String,
     val releaseDate: String,
     val videoUrl: String,
+    val service: AuthService,
     val progress: Int = 0
 )

@@ -18,12 +18,17 @@ interface FloatsauceRepository {
     suspend fun requestDeviceAuth(service: AuthService)
     suspend fun pollForToken(service: AuthService): String?
     suspend fun saveToken(service: AuthService, token: String)
+    suspend fun updateVideoProgress(service: AuthService, videoId: String, progressSeconds: Int)
     suspend fun getCookie(service: AuthService): Pair<String, String>?
     suspend fun logout(service: AuthService)
 }
 
 class MockFloatsauceRepository : FloatsauceRepository {
     override fun getServices(): List<AuthService> = AuthService.entries
+
+    override suspend fun updateVideoProgress(service: AuthService, videoId: String, progressSeconds: Int) {
+        // Mock
+    }
 
     override suspend fun getAuthState(service: AuthService): AuthState {
         // For testing, let's say Floatplane is logged in, Sauce Plus is not
@@ -62,8 +67,8 @@ class MockFloatsauceRepository : FloatsauceRepository {
     override suspend fun getVideos(service: AuthService, creatorId: String, channelId: String?, limit: Int?, fetchAfter: Int?): List<Video> {
         if ((fetchAfter ?: 0) > 0) return emptyList() // Mock only one page
         return listOf(
-            Video("v1", "p1", "Mock Video 1 for $creatorId", null, "10:00", "2 days ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", 50),
-            Video("v2", "p2", "Mock Video 2 for $creatorId", null, "15:30", "1 year ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", 96)
+            Video("v1", "p1", "Mock Video 1 for $creatorId", null, "10:00", "2 days ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", service, 50),
+            Video("v2", "p2", "Mock Video 2 for $creatorId", null, "15:30", "1 year ago", "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", service, 96)
         )
     }
 

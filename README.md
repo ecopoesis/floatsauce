@@ -3,15 +3,15 @@
 This is a Kotlin Multiplatform project targeting AndroidTV and tvOS for view Floatplane and Sauce+ videos.
 
 ### Features
-| Global features                  | tvOS | Android |
-|:---------------------------------|:----:|:-------:|
-| Single Service Mode              |  ❌   |    ❌    |
-| Config Menu on Subscription      |  ✅   |    ✅    |
-| Config Menu on Creator           |  ✅   |    ✅    |
-| Preferred Resolution             |  ❌   |    ❌    |
-| Icon                             |  ✅   |    ❌    |
-| Top Image                        |  ❌   |    ❌    |
-
+| Global features                      | tvOS | Android |
+|:-------------------------------------|:----:|:-------:|
+| Single Service Mode                  |  ❌   |    ❌    |
+| Config Menu on Subscription          |  ✅   |    ✅    |
+| Config Menu on Creator               |  ✅   |    ✅    |
+| Preferred Resolution                 |  ❌   |    ❌    |
+| Icon                                 |  ✅   |    ❌    |
+| Top Image                            |  ❌   |    ❌    |
+| Video end returns to creator details |  ❌   |    ❌    |
 
 
 | Per service features          | Floatplane tvOS | Sauce+ tvOS | Floatplane Android | Sauce+ Android |
@@ -35,8 +35,9 @@ This is a Kotlin Multiplatform project targeting AndroidTV and tvOS for view Flo
 | Comments                      |        ❌        |      ❌      |         ❌          |       ❌        | 
 | Like/dislike from play screen |        ❌        |      ❌      |         ❌          |       ❌        | 
 | Longpress for more video info |        ❌        |      ❌      |         ❌          |       ❌        | 
-| Choose video resolution       |        ❌        |      ❌      |         ❌          |       ❌        | 
-
+| Choose video resolution       |        ❌        |      ❌      |         ❌          |       ❌        |
+| Update video progress         |        ✅        |      ✅      |         ✅          |       ✅        | 
+| Resume videos where left off  |        ❌        |      ❌      |         ❌          |       ❌        |
 
 ### Screen Flow
 
@@ -96,6 +97,14 @@ graph TD
   The most important subfolder is [commonMain](./shared/src/commonMain/kotlin). If preferred, you
   can add code to the platform-specific folders here too.
 
+### Floatplane API
+
+https://jamamp.github.io/FloatplaneAPIDocs/
+
+### Floatplane OAuth
+
+https://github.com/coulterpeterson/FloatNative/blob/main/floatplane_oauth_research.md
+
 ### Build and Run Android Application
 
 To build and run the development version of the Android app, use the run configuration from the run widget
@@ -118,5 +127,3 @@ in your IDE’s toolbar or open the [/iosApp](./iosApp) directory in Xcode and r
 ---
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
-
-Floatplane Oauth: https://github.com/coulterpeterson/FloatNative/blob/main/floatplane_oauth_research.md

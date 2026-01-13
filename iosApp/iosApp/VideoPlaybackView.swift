@@ -4,6 +4,7 @@ import AVKit
 import Logging
 
 struct VideoPlaybackView: View {
+    let video: Video
     let url: String
     let cookieName: String
     let cookieValue: String
@@ -12,7 +13,7 @@ struct VideoPlaybackView: View {
 
     var body: some View {
         if let videoUrl = URL(string: url) {
-            VideoPlayerView(url: videoUrl, cookieName: cookieName, cookieValue: cookieValue, origin: origin)
+            VideoPlayerView(video: video, url: videoUrl, cookieName: cookieName, cookieValue: cookieValue, origin: origin, viewModel: viewModel)
                 .edgesIgnoringSafeArea(.all)
         } else {
             Text("Invalid Video URL")
@@ -175,10 +176,12 @@ class ResourceLoaderDelegate: NSObject, AVAssetResourceLoaderDelegate {
 }
 
 struct VideoPlayerView: UIViewControllerRepresentable {
+    let video: Video
     let url: URL
     let cookieName: String
     let cookieValue: String
     let origin: String
+    let viewModel: SwiftFloatsauceViewModel
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
         logger.debug("tvOS VideoPlayerView: playing \(url.absoluteString)")
@@ -198,6 +201,8 @@ struct VideoPlayerView: UIViewControllerRepresentable {
         let playerItem = AVPlayerItem(asset: asset)
         let player = AVPlayer(playerItem: playerItem)
 
+        context.coordinator.setupObserver(player: player, video: video, viewModel: viewModel)
+
         let controller = AVPlayerViewController()
         controller.player = player
         player.play()
@@ -210,7 +215,84 @@ struct VideoPlayerView: UIViewControllerRepresentable {
         Coordinator()
     }
 
-    class Coordinator {
+    class Coordinator: NSObject {
         var delegate: ResourceLoaderDelegate?
+        var player: AVPlayer?
+        var video: Video?
+        var viewModel: SwiftFloatsauceViewModel?
+        var timeObserver: Any?
+        var lastSentProgress: Int = -1
+        var lastUpdateTime: Date = Date.distantPast
+
+        func setupObserver(player: AVPlayer, video: Video, viewModel: SwiftFloatsauceViewModel) {
+            self.player = player
+            self.video = video
+            self.viewModel = viewModel
+
+            let interval = CMTime(seconds: 1, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+            timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+                self?.handleTimeUpdate(time: time)
+            }
+
+            player.addObserver(self, forKeyPath: "timeControlStatus", options: [.old, .new], context: nil)
+
+            NotificationCenter.default.addObserver(self, selector: #selector(playerDidFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: player.currentItem)
+        }
+
+        override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+            if keyPath == "timeControlStatus" {
+                if let player = object as? AVPlayer {
+                    if player.timeControlStatus == .paused {
+                        logger.debug("Video paused, sending immediate progress update")
+                        sendProgressUpdate(force: true)
+                    }
+                }
+            }
+        }
+
+        @objc func playerDidFinishPlaying() {
+            guard let duration = player?.currentItem?.duration, duration.isNumeric else { return }
+            let durationSeconds = Int(duration.seconds)
+            logger.debug("Video finished, sending progress update: \(durationSeconds) seconds")
+            sendProgressUpdate(progress: durationSeconds, force: true)
+        }
+
+        func handleTimeUpdate(time: CMTime) {
+            guard let player = player else { return }
+            if player.timeControlStatus == .playing {
+                let now = Date()
+                if now.timeIntervalSince(lastUpdateTime) >= 10 {
+                    sendProgressUpdate()
+                }
+            }
+        }
+
+        func sendProgressUpdate(progress: Int? = nil, force: Bool = false) {
+            guard let player = player, let video = video, let viewModel = viewModel else { return }
+
+            let currentProgress: Int
+            if let p = progress {
+                currentProgress = p
+            } else {
+                let time = player.currentTime()
+                guard time.isNumeric else { return }
+                currentProgress = Int(time.seconds)
+            }
+
+            if force || (currentProgress != lastSentProgress && currentProgress >= 0) {
+                logger.debug("Sending progress update: \(currentProgress) seconds for video \(video.id)")
+                viewModel.updateVideoProgress(video: video, progressSeconds: Int32(currentProgress))
+                lastSentProgress = currentProgress
+                lastUpdateTime = Date()
+            }
+        }
+
+        deinit {
+            if let observer = timeObserver {
+                player?.removeTimeObserver(observer)
+            }
+            player?.removeObserver(self, forKeyPath: "timeControlStatus")
+            NotificationCenter.default.removeObserver(self)
+        }
     }
 }

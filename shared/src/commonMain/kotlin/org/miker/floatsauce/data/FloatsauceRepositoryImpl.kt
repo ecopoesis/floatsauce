@@ -178,7 +178,8 @@ class FloatsauceRepositoryImpl(
                     thumbnailUrl = post.thumbnail?.path,
                     duration = formatDuration(post.metadata.videoDuration),
                     releaseDate = formatFriendlyDate(post.releaseDate),
-                    videoUrl = videoId
+                    videoUrl = videoId,
+                    service = service
                 )
             }
         } catch (e: Exception) {
@@ -283,6 +284,15 @@ class FloatsauceRepositoryImpl(
 
     override suspend fun saveToken(service: AuthService, token: String) {
         secureStorage.set("cookie_${service.name}", token)
+    }
+
+    override suspend fun updateVideoProgress(service: AuthService, videoId: String, progressSeconds: Int) {
+        val contentApi = createContentApi(service)
+        try {
+            contentApi.updateProgress(UpdateProgressRequest(id = videoId, contentType = UpdateProgressRequest.ContentType.VIDEO, progress = progressSeconds))
+        } catch (e: Exception) {
+            Logger.withTag("FloatsauceRepository").e(e) { "Failed to update video progress for $videoId" }
+        }
     }
 
     override suspend fun getCookie(service: AuthService): Pair<String, String>? {

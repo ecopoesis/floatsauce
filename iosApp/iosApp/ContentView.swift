@@ -21,7 +21,7 @@ struct ContentView: View {
                 CreatorDetailView(creator: creatorScreen.creator, viewModel: viewModel)
                     .onExitCommand(perform: viewModel.goBack)
             } else if let playbackScreen = viewModel.currentScreen as? Screen.VideoPlayback {
-                VideoPlaybackView(url: playbackScreen.url, cookieName: playbackScreen.cookieName, cookieValue: playbackScreen.cookieValue, origin: playbackScreen.origin, viewModel: viewModel)
+                VideoPlaybackView(video: playbackScreen.video, url: playbackScreen.url, cookieName: playbackScreen.cookieName, cookieValue: playbackScreen.cookieValue, origin: playbackScreen.origin, viewModel: viewModel)
                     .onExitCommand(perform: viewModel.goBack)
             } else if let loggedOutScreen = viewModel.currentScreen as? Screen.LoggedOut {
                 LoggedOutView(service: loggedOutScreen.service, viewModel: viewModel)

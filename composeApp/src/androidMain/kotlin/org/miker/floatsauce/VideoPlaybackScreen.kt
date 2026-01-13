@@ -82,14 +82,34 @@ fun VideoPlaybackScreen(video: Video, creatorName: String, url: String, cookieNa
 
     val focusRequester = remember { FocusRequester() }
 
+    var lastSentProgress by remember { mutableIntStateOf(-1) }
+    var lastUpdateTimestamp by remember { mutableLongStateOf(0L) }
+
+    val sendProgress: (Int?, Boolean) -> Unit = { progressSeconds, force ->
+        val currentProgress = progressSeconds ?: (exoPlayer.currentPosition / 1000).toInt()
+
+        if (force || (currentProgress != lastSentProgress && currentProgress >= 0)) {
+            Logger.d { "Sending progress update: $currentProgress seconds for video ${video.id}" }
+            viewModel.updateVideoProgress(video, currentProgress)
+            lastSentProgress = currentProgress
+            lastUpdateTimestamp = System.currentTimeMillis()
+        }
+    }
+
     DisposableEffect(exoPlayer) {
         val listener = object : Player.Listener {
             override fun onIsPlayingChanged(isPlayingParam: Boolean) {
                 isPlaying = isPlayingParam
+                if (!isPlayingParam && exoPlayer.playbackState != Player.STATE_ENDED) {
+                    sendProgress(null, true)
+                }
             }
 
             override fun onPlaybackStateChanged(state: Int) {
                 duration = exoPlayer.duration.coerceAtLeast(0L)
+                if (state == Player.STATE_ENDED) {
+                    sendProgress((exoPlayer.duration / 1000).toInt(), true)
+                }
             }
         }
         exoPlayer.addListener(listener)
@@ -102,6 +122,12 @@ fun VideoPlaybackScreen(video: Video, creatorName: String, url: String, cookieNa
     LaunchedEffect(isPlaying) {
         while (isPlaying) {
             currentPosition = exoPlayer.currentPosition
+
+            val now = System.currentTimeMillis()
+            if (now - lastUpdateTimestamp >= 10000) {
+                sendProgress(null, false)
+            }
+
             delay(500)
         }
     }
