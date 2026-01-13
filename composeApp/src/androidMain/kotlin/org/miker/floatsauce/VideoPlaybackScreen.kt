@@ -51,8 +51,8 @@ import org.miker.floatsauce.getPlatform
 
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoPlaybackScreen(video: Video, creatorName: String, url: String, cookieName: String, cookieValue: String, origin: String, viewModel: FloatsauceViewModel) {
-    Logger.d { "Android VideoPlaybackScreen: playing $url with cookie $cookieName and origin $origin" }
+fun VideoPlaybackScreen(video: Video, creatorName: String, url: String, resumeProgressSeconds: Int, cookieName: String, cookieValue: String, origin: String, viewModel: FloatsauceViewModel) {
+    Logger.d { "Android VideoPlaybackScreen: playing $url (resume at $resumeProgressSeconds) with cookie $cookieName and origin $origin" }
     val context = LocalContext.current
 
     val exoPlayer = remember(url, cookieValue, origin) {
@@ -151,6 +151,9 @@ fun VideoPlaybackScreen(video: Video, creatorName: String, url: String, cookieNa
                 .setMimeType(MimeTypes.APPLICATION_M3U8)
                 .build()
         )
+        if (resumeProgressSeconds > 0) {
+            exoPlayer.seekTo(resumeProgressSeconds * 1000L)
+        }
         exoPlayer.prepare()
         exoPlayer.play()
     }
@@ -171,8 +174,10 @@ fun VideoPlaybackScreen(video: Video, creatorName: String, url: String, cookieNa
             .focusable()
             .onKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown) {
-                    showControls = true
-                    lastInteractionTime = System.currentTimeMillis()
+                    if (event.nativeKeyEvent.keyCode != KeyEvent.KEYCODE_BACK) {
+                        showControls = true
+                        lastInteractionTime = System.currentTimeMillis()
+                    }
                     when (event.nativeKeyEvent.keyCode) {
                         KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
                             if (isPlaying) exoPlayer.pause() else exoPlayer.play()

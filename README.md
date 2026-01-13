@@ -14,30 +14,31 @@ This is a Kotlin Multiplatform project targeting AndroidTV and tvOS for view Flo
 | Video end returns to creator details |  ❌   |    ❌    |
 
 
-| Per service features          | Floatplane tvOS | Sauce+ tvOS | Floatplane Android | Sauce+ Android |
-|:------------------------------|:---------------:|:-----------:|:------------------:|:--------------:|
-| QR Code Authentication        |        ❌        |      ❌      |         ❌          |       ❌        |
-| Service Buttons               |        ❌        |      ❌      |         ❌          |       ❌        |
-| Subscriptions Grid            |        ✅        |      ✅      |         ✅          |       ✅        |
-| Service Banners               |        ✅        |      ✅      |         ✅          |       ✅        |
-| Creator Detail Views          |        ✅        |      ✅      |         ✅          |       ✅        |
-| HLS Video Playback            |        ✅        |      ✅      |         ✅          |       ✅        |
-| Watch Key Handling            |        ✅        |      ✅      |         ✅          |       ✅        |
-| Live Streaming                |        ❌        |      ❌      |         ❌          |       ❌        |
-| Video Search                  |        ❌        |      ❌      |         ❌          |       ❌        |
-| Post Counts                   |        ❌        |      ❌      |         ❌          |       ❌        |  
-| Video Comments                |        ❌        |      ❌      |         ❌          |       ❌        |  
-| Default to Correct Resolution |        ✅        |      ✅      |         ✅          |       ✅        |  
-| Channels UI on Creator Screen |        ✅        |      ✅      |         ✅          |       ✅        | 
-| Logout                        |        ✅        |      ✅      |         ✅          |       ✅        | 
-| Related videos                |        ❌        |      ❌      |         ❌          |       ❌        | 
-| Video completion              |        ✅        |      ✅      |         ✅          |       ✅        | 
-| Comments                      |        ❌        |      ❌      |         ❌          |       ❌        | 
-| Like/dislike from play screen |        ❌        |      ❌      |         ❌          |       ❌        | 
-| Longpress for more video info |        ❌        |      ❌      |         ❌          |       ❌        | 
-| Choose video resolution       |        ❌        |      ❌      |         ❌          |       ❌        |
-| Update video progress         |        ✅        |      ✅      |         ✅          |       ✅        | 
-| Resume videos where left off  |        ❌        |      ❌      |         ❌          |       ❌        |
+| Per service features                 | Floatplane tvOS | Sauce+ tvOS | Floatplane Android | Sauce+ Android |
+|:-------------------------------------|:---------------:|:-----------:|:------------------:|:--------------:|
+| QR Code Authentication               |        ❌        |      ❌      |         ❌          |       ❌        |
+| Service Buttons                      |        ❌        |      ❌      |         ❌          |       ❌        |
+| Subscriptions Grid                   |        ✅        |      ✅      |         ✅          |       ✅        |
+| Service Banners                      |        ✅        |      ✅      |         ✅          |       ✅        |
+| Creator Detail Views                 |        ✅        |      ✅      |         ✅          |       ✅        |
+| HLS Video Playback                   |        ✅        |      ✅      |         ✅          |       ✅        |
+| Watch Key Handling                   |        ✅        |      ✅      |         ✅          |       ✅        |
+| Live Streaming                       |        ❌        |      ❌      |         ❌          |       ❌        |
+| Video Search                         |        ❌        |      ❌      |         ❌          |       ❌        |
+| Post Counts                          |        ❌        |      ❌      |         ❌          |       ❌        |  
+| Video Comments                       |        ❌        |      ❌      |         ❌          |       ❌        |  
+| Default to Correct Resolution        |        ✅        |      ✅      |         ✅          |       ✅        |  
+| Channels UI on Creator Screen        |        ✅        |      ✅      |         ✅          |       ✅        | 
+| Logout                               |        ✅        |      ✅      |         ✅          |       ✅        | 
+| Related videos                       |        ❌        |      ❌      |         ❌          |       ❌        | 
+| Video completion                     |        ✅        |      ✅      |         ✅          |       ✅        | 
+| Comments                             |        ❌        |      ❌      |         ❌          |       ❌        | 
+| Like/dislike from play screen        |        ❌        |      ❌      |         ❌          |       ❌        | 
+| Longpress for more video info        |        ❌        |      ❌      |         ❌          |       ❌        | 
+| Choose video resolution              |        ❌        |      ❌      |         ❌          |       ❌        |
+| Update video progress                |        ✅        |      ✅      |         ✅          |       ✅        | 
+| Resume videos where left off         |        ✅        |      ✅      |         ✅          |       ✅        |
+| video info overlay watched/unwatched |        ❌        |      ❌      |         ❌          |       ❌        |
 
 ### Screen Flow
 

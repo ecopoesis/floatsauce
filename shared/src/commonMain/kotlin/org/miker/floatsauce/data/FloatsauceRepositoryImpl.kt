@@ -197,13 +197,25 @@ class FloatsauceRepositoryImpl(
         }
     }
 
-    override suspend fun getVideoStreamUrl(service: AuthService, videoId: String): String? {
+    override suspend fun getVideoStreamUrl(service: AuthService, videoId: String): VideoStreamInfo? {
         val contentApi = createContentApi(service)
         val deliveryApi = createDeliveryApi(service)
         return try {
             // As requested, get video content first
-            contentApi.getVideoContent(videoId)
-            
+            val contentResponse = contentApi.getVideoContent(videoId)
+            val videoContent = contentResponse.body()
+
+            var resumeProgress = 0
+            val rawProgress = videoContent.progress
+            if (rawProgress != null) {
+                val duration = videoContent.duration
+                if (rawProgress.toDouble() / duration > 0.95) {
+                    resumeProgress = 0
+                } else {
+                    resumeProgress = (rawProgress - 5).coerceAtLeast(0)
+                }
+            }
+
             val response = deliveryApi.getDeliveryInfoV3(
                 scenario = DeliveryV3Api.ScenarioGetDeliveryInfoV3.ON_DEMAND,
                 entityId = videoId
@@ -235,7 +247,7 @@ class FloatsauceRepositoryImpl(
                 "${baseUrl.removeSuffix("/")}/${variant.url.removePrefix("/")}"
             }
             Logger.d { "Resolved Video URL: $url" }
-            url
+            VideoStreamInfo(url, resumeProgress)
         } catch (e: Exception) {
             Logger.e(e) { "Error getting video stream URL" }
             null

@@ -19,7 +19,7 @@ sealed class Screen {
     data class AuthFailed(val service: AuthService) : Screen()
     data class Subscriptions(val service: AuthService) : Screen()
     data class CreatorDetail(val creator: Creator) : Screen()
-    data class VideoPlayback(val video: Video, val creatorName: String, val url: String, val cookieName: String, val cookieValue: String, val origin: String) : Screen()
+    data class VideoPlayback(val video: Video, val creatorName: String, val url: String, val resumeProgressSeconds: Int, val cookieName: String, val cookieValue: String, val origin: String) : Screen()
     data class LoggedOut(val service: AuthService) : Screen()
 }
 
@@ -195,14 +195,15 @@ class FloatsauceViewModel(
     fun playVideo(video: Video, creator: Creator) {
         viewModelScope.launch {
             Logger.d { "playVideo: fetching stream URL for videoId=${video.id}" }
-            val url = repository.getVideoStreamUrl(creator.service, video.id)
-            if (url != null) {
+            val info = repository.getVideoStreamUrl(creator.service, video.id)
+            if (info != null) {
                 val cookie = repository.getCookie(creator.service)
-                Logger.d { "playVideo: navigating to VideoPlayback with url=$url, cookieName=${cookie?.first}, origin=${creator.service.origin}" }
+                Logger.d { "playVideo: navigating to VideoPlayback with url=${info.url}, resume=${info.resumeProgressSeconds}, cookieName=${cookie?.first}, origin=${creator.service.origin}" }
                 navigateTo(Screen.VideoPlayback(
                     video = video,
                     creatorName = creator.name,
-                    url = url,
+                    url = info.url,
+                    resumeProgressSeconds = info.resumeProgressSeconds,
                     cookieName = cookie?.first ?: "",
                     cookieValue = cookie?.second ?: "",
                     origin = creator.service.origin

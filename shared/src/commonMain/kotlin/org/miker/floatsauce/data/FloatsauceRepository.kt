@@ -6,6 +6,11 @@ import org.miker.floatsauce.domain.models.Creator
 import org.miker.floatsauce.domain.models.Video
 import org.miker.floatsauce.domain.models.Channel
 
+data class VideoStreamInfo(
+    val url: String,
+    val resumeProgressSeconds: Int
+)
+
 interface FloatsauceRepository {
     fun getServices(): List<AuthService>
     suspend fun getAuthState(service: AuthService): AuthState
@@ -14,7 +19,7 @@ interface FloatsauceRepository {
     suspend fun getCreatorDetails(service: AuthService, id: String): Creator?
     suspend fun getVideos(service: AuthService, creatorId: String, channelId: String? = null, limit: Int? = null, fetchAfter: Int? = null): List<Video>
     suspend fun getVideosProgress(service: AuthService, postIds: List<String>): Map<String, Int>
-    suspend fun getVideoStreamUrl(service: AuthService, videoId: String): String?
+    suspend fun getVideoStreamUrl(service: AuthService, videoId: String): VideoStreamInfo?
     suspend fun requestDeviceAuth(service: AuthService)
     suspend fun pollForToken(service: AuthService): String?
     suspend fun saveToken(service: AuthService, token: String)
@@ -76,8 +81,8 @@ class MockFloatsauceRepository : FloatsauceRepository {
         return emptyMap()
     }
 
-    override suspend fun getVideoStreamUrl(service: AuthService, videoId: String): String? {
-        return "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+    override suspend fun getVideoStreamUrl(service: AuthService, videoId: String): VideoStreamInfo? {
+        return VideoStreamInfo("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", 0)
     }
 
     override suspend fun requestDeviceAuth(service: AuthService) {

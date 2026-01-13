@@ -6,6 +6,7 @@ import Logging
 struct VideoPlaybackView: View {
     let video: Video
     let url: String
+    let resumeProgressSeconds: Int32
     let cookieName: String
     let cookieValue: String
     let origin: String
@@ -13,7 +14,7 @@ struct VideoPlaybackView: View {
 
     var body: some View {
         if let videoUrl = URL(string: url) {
-            VideoPlayerView(video: video, url: videoUrl, cookieName: cookieName, cookieValue: cookieValue, origin: origin, viewModel: viewModel)
+            VideoPlayerView(video: video, url: videoUrl, resumeProgressSeconds: resumeProgressSeconds, cookieName: cookieName, cookieValue: cookieValue, origin: origin, viewModel: viewModel)
                 .edgesIgnoringSafeArea(.all)
         } else {
             Text("Invalid Video URL")
@@ -178,13 +179,14 @@ class ResourceLoaderDelegate: NSObject, AVAssetResourceLoaderDelegate {
 struct VideoPlayerView: UIViewControllerRepresentable {
     let video: Video
     let url: URL
+    let resumeProgressSeconds: Int32
     let cookieName: String
     let cookieValue: String
     let origin: String
     let viewModel: SwiftFloatsauceViewModel
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
-        logger.debug("tvOS VideoPlayerView: playing \(url.absoluteString)")
+        logger.debug("tvOS VideoPlayerView: playing \(url.absoluteString) (resume at \(resumeProgressSeconds))")
 
         let userAgent = PlatformKt.getPlatform().userAgent
         logger.debug("tvOS VideoPlayerView User-Agent: \(userAgent)")
@@ -200,6 +202,10 @@ struct VideoPlayerView: UIViewControllerRepresentable {
 
         let playerItem = AVPlayerItem(asset: asset)
         let player = AVPlayer(playerItem: playerItem)
+
+        if resumeProgressSeconds > 0 {
+            player.seek(to: CMTime(seconds: Double(resumeProgressSeconds), preferredTimescale: 1))
+        }
 
         context.coordinator.setupObserver(player: player, video: video, viewModel: viewModel)
 
