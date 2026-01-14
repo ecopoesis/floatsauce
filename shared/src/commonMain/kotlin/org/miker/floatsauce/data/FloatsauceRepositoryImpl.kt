@@ -247,7 +247,19 @@ class FloatsauceRepositoryImpl(
                 "${baseUrl.removeSuffix("/")}/${variant.url.removePrefix("/")}"
             }
             Logger.d { "Resolved Video URL: $url" }
-            VideoStreamInfo(url, resumeProgress)
+
+            val timelineSprite = videoContent.timelineSprite
+            val thumbnailUrl = timelineSprite.path
+            val thumbnailWidth = timelineSprite.width
+            val thumbnailHeight = timelineSprite.height
+
+            val framesPerRow = thumbnailWidth / 160
+            val rows = thumbnailHeight / 90
+            val thumbnailFrameCount = framesPerRow * rows
+            
+            Logger.d { "Resolved Sprite URL: $thumbnailUrl, Width: $thumbnailWidth, Height: $thumbnailHeight, Frames: $thumbnailFrameCount (Grid: ${framesPerRow}x${rows})" }
+
+            VideoStreamInfo(url, resumeProgress, thumbnailUrl, thumbnailWidth, thumbnailHeight, thumbnailFrameCount)
         } catch (e: Exception) {
             Logger.e(e) { "Error getting video stream URL" }
             null

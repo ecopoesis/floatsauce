@@ -10,11 +10,27 @@ struct VideoPlaybackView: View {
     let cookieName: String
     let cookieValue: String
     let origin: String
+    let thumbnailUrl: String?
+    let thumbnailWidth: Int32
+    let thumbnailHeight: Int32
+    let thumbnailFrameCount: Int32
     @ObservedObject var viewModel: SwiftFloatsauceViewModel
 
     var body: some View {
         if let videoUrl = URL(string: url) {
-            VideoPlayerView(video: video, url: videoUrl, resumeProgressSeconds: resumeProgressSeconds, cookieName: cookieName, cookieValue: cookieValue, origin: origin, viewModel: viewModel)
+            VideoPlayerView(
+                video: video,
+                url: videoUrl,
+                resumeProgressSeconds: resumeProgressSeconds,
+                cookieName: cookieName,
+                cookieValue: cookieValue,
+                origin: origin,
+                thumbnailUrl: thumbnailUrl,
+                thumbnailWidth: thumbnailWidth,
+                thumbnailHeight: thumbnailHeight,
+                thumbnailFrameCount: thumbnailFrameCount,
+                viewModel: viewModel
+            )
                 .edgesIgnoringSafeArea(.all)
         } else {
             Text("Invalid Video URL")
@@ -183,6 +199,10 @@ struct VideoPlayerView: UIViewControllerRepresentable {
     let cookieName: String
     let cookieValue: String
     let origin: String
+    let thumbnailUrl: String?
+    let thumbnailWidth: Int32
+    let thumbnailHeight: Int32
+    let thumbnailFrameCount: Int32
     let viewModel: SwiftFloatsauceViewModel
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
@@ -203,15 +223,36 @@ struct VideoPlayerView: UIViewControllerRepresentable {
         let playerItem = AVPlayerItem(asset: asset)
         let player = AVPlayer(playerItem: playerItem)
 
+
         if resumeProgressSeconds > 0 {
             player.seek(to: CMTime(seconds: Double(resumeProgressSeconds), preferredTimescale: 1))
         }
 
-        context.coordinator.setupObserver(player: player, video: video, viewModel: viewModel)
+        context.coordinator.setupObserver(player: player, video: video, viewModel: viewModel, thumbnailUrl: thumbnailUrl)
 
         let controller = AVPlayerViewController()
         controller.player = player
         player.play()
+
+        let overlay = UIHostingController(rootView: ThumbnailOverlay(
+            thumbnailUrl: thumbnailUrl,
+            thumbnailWidth: thumbnailWidth,
+            thumbnailHeight: thumbnailHeight,
+            thumbnailFrameCount: thumbnailFrameCount,
+            coordinator: context.coordinator
+        ))
+        overlay.view.backgroundColor = .clear
+        if let contentOverlay = controller.contentOverlayView {
+            contentOverlay.addSubview(overlay.view)
+            overlay.view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                overlay.view.topAnchor.constraint(equalTo: contentOverlay.topAnchor),
+                overlay.view.leadingAnchor.constraint(equalTo: contentOverlay.leadingAnchor),
+                overlay.view.trailingAnchor.constraint(equalTo: contentOverlay.trailingAnchor),
+                overlay.view.bottomAnchor.constraint(equalTo: contentOverlay.bottomAnchor)
+            ])
+        }
+
         return controller
     }
 
@@ -221,7 +262,7 @@ struct VideoPlayerView: UIViewControllerRepresentable {
         Coordinator()
     }
 
-    class Coordinator: NSObject {
+    class Coordinator: NSObject, ObservableObject {
         var delegate: ResourceLoaderDelegate?
         var player: AVPlayer?
         var video: Video?
@@ -229,20 +270,59 @@ struct VideoPlayerView: UIViewControllerRepresentable {
         var timeObserver: Any?
         var lastSentProgress: Int = -1
         var lastUpdateTime: Date = Date.distantPast
+        private var lastObservedTime: Double = 0
 
-        func setupObserver(player: AVPlayer, video: Video, viewModel: SwiftFloatsauceViewModel) {
+        @Published var isScrubbing: Bool = false
+        @Published var scrubbingTime: Double = 0
+        @Published var duration: Double = 0
+        @Published var spriteImage: UIImage? = nil
+        private var lastScrubTime: Date = Date.distantPast
+        private var currentSpriteUrl: String? = nil
+
+        private var durationObserver: NSKeyValueObservation?
+
+        func setupObserver(player: AVPlayer, video: Video, viewModel: SwiftFloatsauceViewModel, thumbnailUrl: String?) {
             self.player = player
             self.video = video
             self.viewModel = viewModel
 
-            let interval = CMTime(seconds: 1, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+            if let url = thumbnailUrl {
+                loadSprite(urlStr: url)
+            }
+
+            let interval = CMTime(seconds: 0.1, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
             timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
                 self?.handleTimeUpdate(time: time)
             }
 
             player.addObserver(self, forKeyPath: "timeControlStatus", options: [.old, .new], context: nil)
 
+            if let item = player.currentItem {
+                setupItemObservers(item: item)
+            }
+
             NotificationCenter.default.addObserver(self, selector: #selector(playerDidFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: player.currentItem)
+            NotificationCenter.default.addObserver(self, selector: #selector(timeJumped), name: .AVPlayerItemTimeJumped, object: player.currentItem)
+        }
+
+        func setupItemObservers(item: AVPlayerItem) {
+            durationObserver = item.observe(\.duration, options: [.new]) { [weak self] item, change in
+                DispatchQueue.main.async {
+                    if item.duration.isNumeric {
+                        self?.duration = item.duration.seconds
+                    }
+                }
+            }
+        }
+
+        @objc func timeJumped() {
+            DispatchQueue.main.async {
+                self.isScrubbing = true
+                self.lastScrubTime = Date()
+                if let time = self.player?.currentTime() {
+                    self.scrubbingTime = time.seconds
+                }
+            }
         }
 
         override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
@@ -263,8 +343,45 @@ struct VideoPlayerView: UIViewControllerRepresentable {
             sendProgressUpdate(progress: durationSeconds, force: true)
         }
 
+        private func loadSprite(urlStr: String) {
+            guard currentSpriteUrl != urlStr, let url = URL(string: urlStr) else { return }
+            currentSpriteUrl = urlStr
+            
+            URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
+                if let data = data, let image = UIImage(data: data) {
+                    DispatchQueue.main.async {
+                        self?.spriteImage = image
+                        logger.debug("Loaded sprite image: \(image.size.width)x\(image.size.height) from \(urlStr)")
+                    }
+                } else if let error = error {
+                    logger.debug("Failed to load sprite image: \(error.localizedDescription)")
+                }
+            }.resume()
+        }
+
         func handleTimeUpdate(time: CMTime) {
             guard let player = player else { return }
+            let currentTime = time.seconds
+
+            // Detect scrubbing: if time changes significantly while paused, it's a scrub
+            if player.timeControlStatus == .paused || player.rate == 0 {
+                if abs(currentTime - lastObservedTime) > 0.1 {
+                    if !isScrubbing {
+                        logger.debug("Scrubbing detected (time change while paused)")
+                    }
+                    isScrubbing = true
+                    lastScrubTime = Date()
+                }
+            }
+            lastObservedTime = currentTime
+
+            if isScrubbing {
+                if Date().timeIntervalSince(lastScrubTime) > 2.0 {
+                    isScrubbing = false
+                } else {
+                    scrubbingTime = currentTime
+                }
+            }
             if player.timeControlStatus == .playing {
                 let now = Date()
                 if now.timeIntervalSince(lastUpdateTime) >= 10 {
@@ -298,7 +415,60 @@ struct VideoPlayerView: UIViewControllerRepresentable {
                 player?.removeTimeObserver(observer)
             }
             player?.removeObserver(self, forKeyPath: "timeControlStatus")
+            durationObserver?.invalidate()
             NotificationCenter.default.removeObserver(self)
         }
+    }
+}
+
+struct ThumbnailOverlay: View {
+    let thumbnailUrl: String?
+    let thumbnailWidth: Int32
+    let thumbnailHeight: Int32
+    let thumbnailFrameCount: Int32
+    @ObservedObject var coordinator: VideoPlayerView.Coordinator
+
+    var body: some View {
+        GeometryReader { geometry in
+            if coordinator.isScrubbing,
+               let sprite = coordinator.spriteImage,
+               thumbnailFrameCount > 0,
+               coordinator.duration > 0 {
+
+                let progress = coordinator.scrubbingTime / coordinator.duration
+                let thumbHeight: CGFloat = 160
+                let thumbWidth = thumbHeight * (160.0 / 90.0)
+
+                let margin: CGFloat = 20.0 // how close to the edge of the screen should the thumbnail get
+                let timelinePadding = 80.0 // how far is the timeline from the edge of the screen
+                let timelineWidth = geometry.size.width - (timelinePadding * 2)
+                let centerX = timelineWidth * CGFloat(progress) + timelinePadding
+                
+                // Clamp horizontal position to keep thumbnail on screen
+                let xPosition = min(max(centerX, margin + (thumbWidth / 2)), geometry.size.width - margin - (thumbWidth / 2))
+
+                let framesPerRow = max(Int(thumbnailWidth) / 160, 1)
+                let frameIndex = min(max(Int(Double(thumbnailFrameCount) * progress), 0), Int(thumbnailFrameCount) - 1)
+                let column = frameIndex % framesPerRow
+                let row = frameIndex / framesPerRow
+
+                // Use cropping to extract exactly one frame from the sprite sheet
+                if let cgImage = sprite.cgImage,
+                   let croppedCgImage = cgImage.cropping(to: CGRect(
+                       x: CGFloat(column) * 160.0,
+                       y: CGFloat(row) * 90.0,
+                       width: 160.0,
+                       height: 90.0
+                   )) {
+                    Image(uiImage: UIImage(cgImage: croppedCgImage))
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: thumbWidth, height: thumbHeight)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .position(x: xPosition, y: geometry.size.height - 200 - (thumbHeight / 2))
+                }
+            }
+        }
+        .ignoresSafeArea()
     }
 }

@@ -19,7 +19,19 @@ sealed class Screen {
     data class AuthFailed(val service: AuthService) : Screen()
     data class Subscriptions(val service: AuthService) : Screen()
     data class CreatorDetail(val creator: Creator) : Screen()
-    data class VideoPlayback(val video: Video, val creatorName: String, val url: String, val resumeProgressSeconds: Int, val cookieName: String, val cookieValue: String, val origin: String) : Screen()
+    data class VideoPlayback(
+        val video: Video,
+        val creatorName: String,
+        val url: String,
+        val resumeProgressSeconds: Int,
+        val cookieName: String,
+        val cookieValue: String,
+        val origin: String,
+        val thumbnailUrl: String? = null,
+        val thumbnailWidth: Int = 0,
+        val thumbnailHeight: Int = 0,
+        val thumbnailFrameCount: Int = 0
+    ) : Screen()
     data class LoggedOut(val service: AuthService) : Screen()
 }
 
@@ -206,7 +218,11 @@ class FloatsauceViewModel(
                     resumeProgressSeconds = info.resumeProgressSeconds,
                     cookieName = cookie?.first ?: "",
                     cookieValue = cookie?.second ?: "",
-                    origin = creator.service.origin
+                    origin = creator.service.origin,
+                    thumbnailUrl = info.thumbnailUrl,
+                    thumbnailWidth = info.thumbnailWidth,
+                    thumbnailHeight = info.thumbnailHeight,
+                    thumbnailFrameCount = info.thumbnailFrameCount
                 ))
             } else {
                 Logger.d { "playVideo: failed to get stream URL" }

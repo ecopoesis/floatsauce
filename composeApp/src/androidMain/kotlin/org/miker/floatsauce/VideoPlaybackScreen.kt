@@ -34,7 +34,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.asImageBitmap
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.request.allowHardware
+import coil3.size.Precision
+import coil3.size.Size
+import coil3.asDrawable
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.KeyEventType
@@ -45,13 +59,28 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import kotlinx.coroutines.delay
 import android.view.KeyEvent
+import coil3.request.maxBitmapSize
+import coil3.size.Dimension
 import org.miker.floatsauce.domain.models.Video
 import org.miker.floatsauce.presentation.FloatsauceViewModel
 import org.miker.floatsauce.getPlatform
 
 @OptIn(UnstableApi::class)
 @Composable
-fun VideoPlaybackScreen(video: Video, creatorName: String, url: String, resumeProgressSeconds: Int, cookieName: String, cookieValue: String, origin: String, viewModel: FloatsauceViewModel) {
+fun VideoPlaybackScreen(
+    video: Video,
+    creatorName: String,
+    url: String,
+    resumeProgressSeconds: Int,
+    cookieName: String,
+    cookieValue: String,
+    origin: String,
+    thumbnailUrl: String?,
+    thumbnailWidth: Int,
+    thumbnailHeight: Int,
+    thumbnailFrameCount: Int,
+    viewModel: FloatsauceViewModel
+) {
     Logger.d { "Android VideoPlaybackScreen: playing $url (resume at $resumeProgressSeconds) with cookie $cookieName and origin $origin" }
     val context = LocalContext.current
 
@@ -79,6 +108,45 @@ fun VideoPlaybackScreen(video: Video, creatorName: String, url: String, resumePr
     var duration by remember { mutableStateOf(0L) }
     var showControls by remember { mutableStateOf(true) }
     var lastInteractionTime by remember { mutableStateOf(System.currentTimeMillis()) }
+    var isScrubbing by remember { mutableStateOf(false) }
+    var lastScrubTime by remember { mutableLongStateOf(0L) }
+    var spriteBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(thumbnailUrl) {
+        if (thumbnailUrl != null) {
+            try {
+                val loader = context.imageLoader
+                val request = ImageRequest.Builder(context)
+                    .data(thumbnailUrl)
+                    .maxBitmapSize(Size(Dimension.Undefined, Dimension.Undefined))
+                    .size(thumbnailWidth, thumbnailHeight)
+                    .precision(Precision.EXACT)
+                    .allowHardware(false)
+                    .build()
+                val result = loader.execute(request)
+                if (result is SuccessResult) {
+                    val bitmap = (result.image.asDrawable(context.resources) as? BitmapDrawable)?.bitmap
+                    if (bitmap != null) {
+                        Logger.d { "Loaded sprite bitmap: ${bitmap.width}x${bitmap.height} (Expected: ${thumbnailWidth}x${thumbnailHeight}) for $thumbnailUrl" }
+                    }
+                    spriteBitmap = bitmap
+                }
+            } catch (e: Exception) {
+                Logger.e(e) { "Failed to load sprite" }
+            }
+        } else {
+            spriteBitmap = null
+        }
+    }
+
+    LaunchedEffect(isScrubbing, lastScrubTime) {
+        if (isScrubbing) {
+            while (System.currentTimeMillis() - lastScrubTime < 2000) {
+                delay(500)
+            }
+            isScrubbing = false
+        }
+    }
 
     val focusRequester = remember { FocusRequester() }
 
@@ -186,11 +254,15 @@ fun VideoPlaybackScreen(video: Video, creatorName: String, url: String, resumePr
                         KeyEvent.KEYCODE_DPAD_LEFT -> {
                             exoPlayer.seekTo((exoPlayer.currentPosition - 10000).coerceAtLeast(0))
                             currentPosition = exoPlayer.currentPosition
+                            isScrubbing = true
+                            lastScrubTime = System.currentTimeMillis()
                             true
                         }
                         KeyEvent.KEYCODE_DPAD_RIGHT -> {
                             exoPlayer.seekTo((exoPlayer.currentPosition + 10000).coerceAtMost(exoPlayer.duration))
                             currentPosition = exoPlayer.currentPosition
+                            isScrubbing = true
+                            lastScrubTime = System.currentTimeMillis()
                             true
                         }
                         else -> false
@@ -233,21 +305,83 @@ fun VideoPlaybackScreen(video: Video, creatorName: String, url: String, resumePr
                     )
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Progress Bar
+                    // Thumbnail Preview and Progress Bar
                     val progress = if (duration > 0) currentPosition.toFloat() / duration else 0f
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.3f))
-                    ) {
+
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        val maxWidth = maxWidth
+                        if (showControls && isScrubbing && thumbnailUrl != null && thumbnailFrameCount > 0 && duration > 0) {
+                            val thumbHeight = 120.dp
+                            val thumbWidth = thumbHeight * (160f / 90f)
+                            val centerX = maxWidth * progress
+                            val halfThumbWidth = thumbWidth / 2
+                            val thumbX = (centerX - halfThumbWidth).coerceIn(0.dp, maxWidth - thumbWidth)
+
+                            Box(
+                                modifier = Modifier
+                                    .offset(x = thumbX)
+                                    .padding(bottom = 16.dp)
+                                    .size(thumbWidth, thumbHeight)
+                                    .background(Color.Black)
+                                    .clipToBounds()
+                            ) {
+                                val frameIndex = (progress * thumbnailFrameCount).toInt().coerceIn(0, thumbnailFrameCount - 1)
+                                val framesPerRow = thumbnailWidth / 160
+                                if (framesPerRow > 0) {
+                                    val column = frameIndex % framesPerRow
+                                    val row = frameIndex / framesPerRow
+
+                                    val sprite = spriteBitmap
+                                    if (sprite != null && thumbnailWidth > 0 && thumbnailHeight > 0) {
+                                        val frameBitmap = remember(sprite, frameIndex) {
+                                            try {
+                                                val scaleX = sprite.width.toFloat() / thumbnailWidth
+                                                val scaleY = sprite.height.toFloat() / thumbnailHeight
+
+                                                val srcX = (column * 160 * scaleX).toInt().coerceIn(0, (sprite.width - 1).coerceAtLeast(0))
+                                                val srcY = (row * 90 * scaleY).toInt().coerceIn(0, (sprite.height - 1).coerceAtLeast(0))
+                                                val srcWidth = (160 * scaleX).toInt().coerceAtLeast(1)
+                                                val srcHeight = (90 * scaleY).toInt().coerceAtLeast(1)
+
+                                                // Adjust srcWidth/srcHeight to stay within bounds
+                                                val safeSrcWidth = srcWidth.coerceAtMost(sprite.width - srcX)
+                                                val safeSrcHeight = srcHeight.coerceAtMost(sprite.height - srcY)
+
+                                                Bitmap.createBitmap(sprite, srcX, srcY, safeSrcWidth, safeSrcHeight)
+                                            } catch (e: Exception) {
+                                                Logger.e(e) { "Failed to extract frame at $frameIndex" }
+                                                null
+                                            }
+                                        }
+
+                                        if (frameBitmap != null) {
+                                            Image(
+                                                bitmap = frameBitmap.asImageBitmap(),
+                                                contentDescription = null,
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = ContentScale.FillBounds
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         Box(
                             modifier = Modifier
-                                .fillMaxHeight()
-                                .fillMaxWidth(progress)
-                                .background(Color.White)
-                        )
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.3f))
+                                .align(Alignment.BottomStart)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(progress)
+                                    .background(Color.White)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))

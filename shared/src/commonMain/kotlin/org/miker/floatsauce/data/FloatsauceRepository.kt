@@ -8,7 +8,11 @@ import org.miker.floatsauce.domain.models.Channel
 
 data class VideoStreamInfo(
     val url: String,
-    val resumeProgressSeconds: Int
+    val resumeProgressSeconds: Int,
+    val thumbnailUrl: String? = null,
+    val thumbnailWidth: Int = 0,
+    val thumbnailHeight: Int = 0,
+    val thumbnailFrameCount: Int = 0
 )
 
 interface FloatsauceRepository {
