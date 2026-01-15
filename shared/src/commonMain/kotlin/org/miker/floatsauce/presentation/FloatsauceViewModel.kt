@@ -236,9 +236,14 @@ class FloatsauceViewModel(
         }
     }
 
-    fun updateVideoProgress(video: Video, progressSeconds: Int) {
+    fun updateVideoProgress(video: Video, progressSeconds: Int, progressPercent: Int? = null) {
         viewModelScope.launch {
             repository.updateVideoProgress(video.service, video.id, progressSeconds)
+            if (progressPercent != null) {
+                _videos.value = _videos.value.map {
+                    if (it.id == video.id) it.copy(progress = progressPercent) else it
+                }
+            }
         }
     }
 
@@ -274,13 +279,36 @@ class FloatsauceViewModel(
         }
     }
 
+    private fun refreshVideosProgress(creator: Creator) {
+        viewModelScope.launch {
+            try {
+                val postIds = _videos.value.map { it.postId }
+                if (postIds.isEmpty()) return@launch
+
+                val progressMap = repository.getVideosProgress(creator.service, postIds)
+                _videos.value = _videos.value.map { video ->
+                    val rawProgress = progressMap[video.postId] ?: video.progress
+                    val progress = if (rawProgress >= 95) 100 else rawProgress
+                    video.copy(progress = progress)
+                }
+            } catch (e: Exception) {
+                Logger.e(e) { "Error refreshing videos progress" }
+            }
+        }
+    }
+
     fun goBack() {
         Logger.d { "goBack: current=${_currentScreen.value}, stackSize=${screenStack.size}" }
+        val current = _currentScreen.value
         if (screenStack.isNotEmpty()) {
             val previous = screenStack.removeAt(screenStack.size - 1)
             _currentScreen.value = previous
             if (previous == Screen.ServiceSelection) {
                 _authState.value = null
+            }
+
+            if (current is Screen.VideoPlayback && previous is Screen.CreatorDetail) {
+                refreshVideosProgress(previous.creator)
             }
         } else {
             // Root screen, could exit but we don't have that control here easily

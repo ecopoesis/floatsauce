@@ -404,13 +404,21 @@ struct VideoPlayerView: UIViewControllerRepresentable {
 
             if force || (currentProgress != lastSentProgress && currentProgress >= 0) {
                 logger.debug("Sending progress update: \(currentProgress) seconds for video \(video.id)")
-                viewModel.updateVideoProgress(video: video, progressSeconds: Int32(currentProgress))
+
+                var progressPercent: Int32? = nil
+                if duration > 0 {
+                    let percent = Int32((Double(currentProgress) / duration) * 100)
+                    progressPercent = min(max(percent, 0), 100)
+                }
+
+                viewModel.updateVideoProgress(video: video, progressSeconds: Int32(currentProgress), progressPercent: progressPercent)
                 lastSentProgress = currentProgress
                 lastUpdateTime = Date()
             }
         }
 
         deinit {
+            sendProgressUpdate(force: true)
             if let observer = timeObserver {
                 player?.removeTimeObserver(observer)
             }

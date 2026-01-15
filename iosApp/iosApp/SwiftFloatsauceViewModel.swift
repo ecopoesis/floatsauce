@@ -99,8 +99,8 @@ class SwiftFloatsauceViewModel: ObservableObject {
         viewModel.playVideo(video: video, creator: creator)
     }
 
-    func updateVideoProgress(video: Video, progressSeconds: Int32) {
-        viewModel.updateVideoProgress(video: video, progressSeconds: progressSeconds)
+    func updateVideoProgress(video: Video, progressSeconds: Int32, progressPercent: Int32? = nil) {
+        viewModel.updateVideoProgress(video: video, progressSeconds: progressSeconds, progressPercent: progressPercent != nil ? KotlinInt(value: progressPercent!) : nil)
     }
 
     func fetchCreatorDetails(creator: Creator) {
