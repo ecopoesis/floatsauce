@@ -5,6 +5,7 @@ struct CreatorDetailView: View {
     let creator: Creator
     @ObservedObject var viewModel: SwiftFloatsauceViewModel
     @State private var showSettings = false
+    @FocusState private var focusedVideoId: String?
     
     private var currentCreator: Creator {
         viewModel.subscriptions.first(where: { $0.id == creator.id }) ?? creator
@@ -18,88 +19,111 @@ struct CreatorDetailView: View {
 
     var body: some View {
         ZStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    // Banner
-                    ZStack(alignment: .topTrailing) {
-                        if let bannerUrl = currentCreator.bannerUrl, let url = URL(string: bannerUrl) {
-                            AsyncImage(url: url) { image in
-                                image.resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            } placeholder: {
-                                Color.gray
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Banner
+                        ZStack(alignment: .topTrailing) {
+                            if let bannerUrl = currentCreator.bannerUrl, let url = URL(string: bannerUrl) {
+                                AsyncImage(url: url) { image in
+                                    image.resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                } placeholder: {
+                                    Color.gray
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 400) // Top third roughly
+                                .clipped()
+                            } else {
+                                Color.black.frame(height: 200)
                             }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 400) // Top third roughly
-                            .clipped()
-                        } else {
-                            Color.black.frame(height: 200)
+                            
+                            HStack {
+                                Spacer()
+                                SettingsButton(action: { showSettings = true })
+                                    .padding(40)
+                            }
+                            .focusSection()
                         }
                         
-                        HStack {
-                            Spacer()
-                            SettingsButton(action: { showSettings = true })
-                                .padding(40)
-                        }
-                        .focusSection()
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 40) {
-                        Text(currentCreator.name)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 60)
-                            .padding(.top, 40)
-                        
-                        if let channels = currentCreator.channels, channels.count > 1 {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 30) {
-                                    ChannelButton(title: "All", iconUrl: currentCreator.iconUrl, isSelected: viewModel.selectedChannel == nil) {
-                                        viewModel.selectChannel(creator: currentCreator, channel: nil)
-                                    }
-                                    
-                                    ForEach(channels, id: \.id) { channel in
-                                        ChannelButton(title: channel.title, iconUrl: channel.iconUrl, isSelected: viewModel.selectedChannel?.id == channel.id) {
-                                            viewModel.selectChannel(creator: currentCreator, channel: channel)
+                        VStack(alignment: .leading, spacing: 40) {
+                            Text(currentCreator.name)
+                                .font(.largeTitle)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 60)
+                                .padding(.top, 40)
+                            
+                            if let channels = currentCreator.channels, channels.count > 1 {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 30) {
+                                        ChannelButton(title: "All", iconUrl: currentCreator.iconUrl, isSelected: viewModel.selectedChannel == nil) {
+                                            viewModel.selectChannel(creator: currentCreator, channel: nil)
                                         }
+                                        
+                                        ForEach(channels, id: \.id) { channel in
+                                            ChannelButton(title: channel.title, iconUrl: channel.iconUrl, isSelected: viewModel.selectedChannel?.id == channel.id) {
+                                                viewModel.selectChannel(creator: currentCreator, channel: channel)
+                                            }
+                                        }
+                                    }
+                                    .padding(.horizontal, 60)
+                                    .padding(.vertical, 10)
+                                }
+                            }
+
+                            if viewModel.videos.isEmpty {
+                                HStack {
+                                    Spacer()
+                                    Button("No videos found") {
+                                        viewModel.goBack()
+                                    }
+                                    Spacer()
+                                }
+                                .padding(.top, 100)
+                            } else {
+                                LazyVGrid(columns: columns, spacing: 60) {
+                                    ForEach(viewModel.videos, id: \.id) { video in
+                                        VideoCard(video: video, creator: currentCreator, viewModel: viewModel, isFocused: focusedVideoId == video.id)
+                                            .id(video.id)
+                                            .focused($focusedVideoId, equals: video.id)
+                                            .onAppear {
+                                                if video.id == viewModel.lastPlayedVideoId {
+                                                    focusedVideoId = video.id
+                                                }
+                                                if video.id == viewModel.videos.last?.id {
+                                                    viewModel.loadMoreVideos(creator: currentCreator)
+                                                }
+                                            }
                                     }
                                 }
                                 .padding(.horizontal, 60)
-                                .padding(.vertical, 10)
+                                .padding(.bottom, 60)
                             }
-                        }
-
-                        if viewModel.videos.isEmpty {
-                            HStack {
-                                Spacer()
-                                Button("No videos found") {
-                                    viewModel.goBack()
-                                }
-                                Spacer()
-                            }
-                            .padding(.top, 100)
-                        } else {
-                            LazyVGrid(columns: columns, spacing: 60) {
-                                ForEach(viewModel.videos, id: \.id) { video in
-                                    VideoCard(video: video, creator: currentCreator, viewModel: viewModel)
-                                        .onAppear {
-                                            if video.id == viewModel.videos.last?.id {
-                                                viewModel.loadMoreVideos(creator: currentCreator)
-                                            }
-                                        }
-                                }
-                            }
-                            .padding(.horizontal, 60)
-                            .padding(.bottom, 60)
                         }
                     }
                 }
-            }
-            .disabled(showSettings)
-            .edgesIgnoringSafeArea(.all)
-            .onAppear {
-                viewModel.fetchCreatorDetails(creator: creator)
+                .disabled(showSettings)
+                .edgesIgnoringSafeArea(.all)
+                .onAppear {
+                    viewModel.fetchCreatorDetails(creator: creator)
+                    if let lastId = viewModel.lastPlayedVideoId {
+                        focusedVideoId = lastId
+                        // Scroll to it after a short delay to allow the grid to populate
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            proxy.scrollTo(lastId, anchor: .center)
+                            // Re-assert focus after scroll to ensure it sticks
+                            focusedVideoId = lastId
+                        }
+                    }
+                }
+                .onChange(of: viewModel.videos) { videos in
+                    // If we just loaded videos and have a last played one, scroll to it
+                    if let lastId = viewModel.lastPlayedVideoId, !videos.isEmpty {
+                        focusedVideoId = lastId
+                        proxy.scrollTo(lastId, anchor: .center)
+                    }
+                }
             }
             
             SettingsOverlay(isPresented: $showSettings, viewModel: viewModel)
@@ -152,7 +176,7 @@ struct VideoCard: View {
     let video: Video
     let creator: Creator
     @ObservedObject var viewModel: SwiftFloatsauceViewModel
-    @FocusState private var isFocused: Bool
+    let isFocused: Bool
     
     var body: some View {
         Button(action: { viewModel.playVideo(video: video, creator: creator) }) {
@@ -223,6 +247,5 @@ struct VideoCard: View {
             }
         }
         .buttonStyle(.borderless)
-        .focused($isFocused)
     }
 }

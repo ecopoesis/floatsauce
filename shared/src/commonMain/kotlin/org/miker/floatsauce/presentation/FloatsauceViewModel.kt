@@ -59,6 +59,9 @@ class FloatsauceViewModel(
     private val _selectedChannel = MutableStateFlow<Channel?>(null)
     val selectedChannel: StateFlow<Channel?> = _selectedChannel.asStateFlow()
 
+    private val _lastPlayedVideoId = MutableStateFlow<String?>(null)
+    val lastPlayedVideoId: StateFlow<String?> = _lastPlayedVideoId.asStateFlow()
+
     private var currentOffset = 0
     private var canLoadMore = true
     private var isLoadingMore = false
@@ -146,6 +149,7 @@ class FloatsauceViewModel(
 
     fun selectCreator(creator: Creator) {
         _selectedChannel.value = null
+        _lastPlayedVideoId.value = null
         currentOffset = 0
         canLoadMore = true
         _videos.value = emptyList()
@@ -157,6 +161,7 @@ class FloatsauceViewModel(
 
     fun selectChannel(creator: Creator, channel: Channel?) {
         _selectedChannel.value = channel
+        _lastPlayedVideoId.value = null
         currentOffset = 0
         canLoadMore = true
         _videos.value = emptyList()
@@ -205,6 +210,7 @@ class FloatsauceViewModel(
     }
 
     fun playVideo(video: Video, creator: Creator) {
+        _lastPlayedVideoId.value = video.id
         viewModelScope.launch {
             Logger.d { "playVideo: fetching stream URL for videoId=${video.id}" }
             val info = repository.getVideoStreamUrl(creator.service, video.id)
@@ -289,6 +295,7 @@ class FloatsauceViewModel(
     fun watchBrowseCreators(onEach: (List<Creator>) -> Unit) = browseCreators.onEach { onEach(it) }.launchIn(viewModelScope)
     fun watchVideos(onEach: (List<Video>) -> Unit) = videos.onEach { onEach(it) }.launchIn(viewModelScope)
     fun watchSelectedChannel(onEach: (Channel?) -> Unit) = selectedChannel.onEach { onEach(it) }.launchIn(viewModelScope)
+    fun watchLastPlayedVideoId(onEach: (String?) -> Unit) = lastPlayedVideoId.onEach { onEach(it) }.launchIn(viewModelScope)
     fun watchAuthState(onEach: (AuthState?) -> Unit) = authState.onEach { onEach(it) }.launchIn(viewModelScope)
     fun watchLoginStatuses(onEach: (Map<AuthService, Boolean>) -> Unit) = loginStatuses.onEach { onEach(it) }.launchIn(viewModelScope)
 }

@@ -29,6 +29,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import org.miker.floatsauce.domain.models.Channel
 import org.miker.floatsauce.domain.models.Creator
 import org.miker.floatsauce.domain.models.Video
@@ -39,10 +41,22 @@ fun CreatorDetailScreen(creator: Creator, viewModel: FloatsauceViewModel) {
     val videos by viewModel.videos.collectAsState()
     val subscriptions by viewModel.subscriptions.collectAsState()
     val selectedChannel by viewModel.selectedChannel.collectAsState()
+    val lastPlayedVideoId by viewModel.lastPlayedVideoId.collectAsState()
     val currentCreator = subscriptions.find { it.id == creator.id } ?: creator
     val channels = currentCreator.channels
 
     val gridState = rememberLazyGridState()
+
+    LaunchedEffect(videos, lastPlayedVideoId) {
+        if (lastPlayedVideoId != null && videos.isNotEmpty()) {
+            val index = videos.indexOfFirst { it.id == lastPlayedVideoId }
+            if (index != -1) {
+                val headerItems = 2 + (if (channels != null && channels.size > 1) 1 else 0)
+                gridState.scrollToItem(index + headerItems)
+            }
+        }
+    }
+
     val shouldLoadMore = remember {
         derivedStateOf {
             val lastVisibleItemIndex = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
@@ -126,8 +140,8 @@ fun CreatorDetailScreen(creator: Creator, viewModel: FloatsauceViewModel) {
                     }
                 }
             } else {
-                items(videos) { video ->
-                    VideoCard(video, creator, viewModel)
+                items(videos, key = { it.id }) { video ->
+                    VideoCard(video, creator, viewModel, isInitialFocus = video.id == lastPlayedVideoId)
                 }
             }
         }
@@ -214,10 +228,19 @@ fun ChannelButton(title: String, iconUrl: String?, isSelected: Boolean, onClick:
 }
 
 @Composable
-fun VideoCard(video: Video, creator: Creator, viewModel: FloatsauceViewModel) {
+fun VideoCard(video: Video, creator: Creator, viewModel: FloatsauceViewModel, isInitialFocus: Boolean = false) {
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(isInitialFocus) {
+        if (isInitialFocus) {
+            focusRequester.requestFocus()
+        }
+    }
+
     Surface(
         modifier = Modifier
             .padding(16.dp)
+            .focusRequester(focusRequester)
             .clickable { viewModel.playVideo(video, creator) },
         shape = RoundedCornerShape(12.dp),
         color = Color(0xFF1E1E1E)

@@ -8,6 +8,7 @@ class SwiftFloatsauceViewModel: ObservableObject {
     @Published var browseCreators: [Creator] = []
     @Published var videos: [Video] = []
     @Published var selectedChannel: Channel? = nil
+    @Published var lastPlayedVideoId: String? = nil
     @Published var authState: AuthState? = nil
     @Published var loginStatuses: [AuthService: Bool] = [:]
     
@@ -50,6 +51,12 @@ class SwiftFloatsauceViewModel: ObservableObject {
         viewModel.watchSelectedChannel { [weak self] selectedChannel in
             DispatchQueue.main.async {
                 self?.selectedChannel = selectedChannel
+            }
+        }
+        
+        viewModel.watchLastPlayedVideoId { [weak self] lastPlayedVideoId in
+            DispatchQueue.main.async {
+                self?.lastPlayedVideoId = lastPlayedVideoId
             }
         }
         
